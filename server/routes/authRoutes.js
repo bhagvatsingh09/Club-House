@@ -41,27 +41,42 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Find User
+    // 1. Check if user exists
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
 
-    // 2. Compare Password
+    // 2. Validate password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
 
-    // 3. Generate JWT
+    // 3. Generate JWT Token
+    // We include the role in the payload so the frontend can read it
     const token = jwt.sign(
-      { id: user._id, role: user.role }, 
-      process.env.JWT_SECRET || 'your_secret_key', 
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
+    // 4. Send response
+    // The frontend logic you shared earlier expects 'token' and 'user'
     res.json({
       token,
-      user: { id: user._id, name: user.name, role: user.role, email: user.email, clubId: user.clubId }
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role, // This will be 'Admin', 'Faculty', or 'Student'
+        clubId: user.clubId
+      }
     });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

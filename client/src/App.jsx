@@ -21,6 +21,7 @@ import GlobalGalleries from './pages/admin/GlobalGalleries';
 import UserLogs from './pages/admin/UserLogs';
 import StudentApprovals from "./pages/admin/StudentApprovals";
 import AdminStudents from "./pages/admin/AdminStudents";
+import AdminLogin from './pages/admin/AdminLogin';
 
 
 // Import other pages...
@@ -55,26 +56,27 @@ function App() {
         </Route>
 
         {/* Admin Routes */}
-<Route path="/admin" element={<AdminLayout />}>
+        <Route path='/admin/login' element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminLayout />}>
 
-  <Route index element={<Navigate to="/admin/dashboard" />} />
+          <Route index element={<Navigate to="/admin/dashboard" />} />
 
-  <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
 
-  {/* Approved Students Page */}
-  <Route path="approved-students" element={<StudentApprovals />} />
+          {/* Approved Students Page */}
+          <Route path="approved-students" element={<StudentApprovals />} />
 
-  <Route path="clubs" element={<ManageClubs />} />
+          <Route path="clubs" element={<ManageClubs />} />
 
-  <Route path="tasks" element={<AssignTasks />} />
+          <Route path="tasks" element={<AssignTasks />} />
 
-  <Route path="galleries" element={<GlobalGalleries />} />
+          <Route path="galleries" element={<GlobalGalleries />} />
 
-  <Route path="logs" element={<UserLogs />} />
+          <Route path="logs" element={<UserLogs />} />
 
-  <Route path="/admin/students" element={<AdminStudents />} />
+          <Route path="/admin/students" element={<AdminStudents />} />
 
-</Route>
+        </Route>
       </Routes>
     </Router>
   );

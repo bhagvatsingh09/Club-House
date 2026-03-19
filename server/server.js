@@ -24,7 +24,7 @@ app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/club', require('./routes/clubRoutes'));
 app.use('/api/gallery', require('./routes/galleryRoutes'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// app.use('/api/admin', require('./routes/studentRoutes'));
+app.use('/api/admin', require('./routes/studentRoutes')); 
 app.use('/api/users', require('./routes/userRoutes'));
 app.use("/api/admin", adminRoutes);
 

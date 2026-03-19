@@ -10,25 +10,24 @@ const Registration = require('../models/Registration');
 
 router.get("/students", async (req, res) => {
   try {
+    // 1. Fetch students and populate the 'joinedClubs' field from the Clubs collection
+    const students = await User.find({ role: "Student" })
+      .select("name email joinedClubs")
+      .populate("joinedClubs", "name"); 
 
-    const registrations = await Registration.find()
-      .populate("userId", "name email studentId")
-      .populate("clubId", "name")
-      .populate("eventId", "title");
-
-    const students = registrations.map(r => ({
-      name: r.userId?.name,
-      email: r.userId?.email,
-      studentId: r.userId?.studentId,
-      clubName: r.clubId?.name,
-      eventName: r.eventId?.title
+    // 2. Format the response
+    const formattedData = students.map(s => ({
+      _id: s._id,
+      name: s.name,
+      email: s.email,
+      // Map the populated objects to just get the names
+      clubs: s.joinedClubs.map(club => club.name) 
     }));
 
-    res.json(students);
-
+    res.json(formattedData);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error fetching students" });
+    res.status(500).json({ message: "Error fetching students with clubs" });
   }
 });
 

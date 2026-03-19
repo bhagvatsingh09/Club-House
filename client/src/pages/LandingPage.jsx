@@ -89,7 +89,7 @@ const Landingpage = () => {
         <p className="small text-secondary mb-1">(c)2026 College Club</p>
         <p className="small text-secondary mb-1">Email: support@collegeclub.com</p>
         <p className="small text-secondary">Phone: +91 1232366696</p>
-                      <li className="nav-item"><Link className="nav-link" to="/admin">Admin</Link></li>
+                      <li className="nav-item"><Link className="nav-link" to="/admin/login">Admin</Link></li>
 
       </footer>
     </div>
