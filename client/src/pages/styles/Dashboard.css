@@ -1,0 +1,84 @@
+/* Dashboard Specific Styles */
+.dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: #050a18; /* Slightly darker for depth */
+}
+
+/* Update these specific classes */
+
+/* src/index.css */
+body {
+  margin: 0;
+  background-color: #0a1128; /* Deep Navy Blue */
+  color: #e2e8f0; /* Soft White/Grey text */
+  font-family: 'Inter', sans-serif; /* A premium, modern font */
+}
+.dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #050a18;
+  overflow: hidden; /* Prevents unwanted horizontal scrolls */
+}
+
+.sidebar {
+  width: 260px;
+  min-width: 260px; /* Forces it to stay this width */
+  flex-shrink: 0;    /* Prevents flexbox from squeezing it */
+  background: rgba(255, 255, 255, 0.03);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.main-content {
+  flex-grow: 1;
+  height: 100vh;
+  overflow-y: auto; /* This makes ONLY the content scroll, not the sidebar */
+  padding: 2rem;
+  background-color: #050a18;
+}
+
+.nav-link-custom {
+  color: #a0aec0;
+  padding: 12px 15px;
+  border-radius: 10px;
+  display: block;
+  text-decoration: none;
+  transition: 0.3s;
+  margin-bottom: 5px;
+}
+
+.nav-link-custom:hover, .nav-link-custom.active {
+  background: rgba(93, 120, 255, 0.1);
+  color: #5d78ff;
+}
+
+.announcement-card {
+  border-left: 4px solid #5d78ff;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.badge-pending { background: #f6ad55; color: #000; }
+.badge-approved { background: #48bb78; color: #fff; }
+
+/* Status Badge Variations */
+.badge-upcoming { background: rgba(93, 120, 255, 0.2); color: #5d78ff; border: 1px solid rgba(93, 120, 255, 0.3); }
+.badge-completed { background: rgba(72, 187, 120, 0.2); color: #48bb78; border: 1px solid rgba(72, 187, 120, 0.3); }
+.badge-cancelled { background: rgba(245, 101, 101, 0.2); color: #f56565; border: 1px solid rgba(245, 101, 101, 0.3); }
+
+.event-card-horizontal {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.event-card-horizontal:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: #5d78ff;
+}
