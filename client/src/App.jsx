@@ -22,6 +22,8 @@ import UserLogs from './pages/admin/UserLogs';
 import StudentApprovals from "./pages/admin/StudentApprovals";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminLogin from './pages/admin/AdminLogin';
+import EventRegister from "./pages/user/EventRegister";
+
 
 
 // Import other pages...
@@ -41,13 +43,14 @@ function App() {
           <Route path="clubs" element={<ExploreClub />} />
           <Route path="events" element={<MyEvents />} />
           <Route path='profile' element={<Profile />} />
+          <Route path="event-register/:eventId" element={<EventRegister />} />
+
         </Route>
 
         {/* Coordinator Routes */}
         <Route path="/coord" element={<CoordLayout />}>
           <Route index element={<Navigate to="/coord/dashboard" />} />
           <Route path='dashboard' element={<CoordDashboard />} />
-          <Route path="dashboard/student-approvals" element={<StudentApprovals />} />
           <Route path="announce" element={<AnnounceEvent />} />
           <Route path="approvals" element={<EventApprovals />} />
           <Route path="members" element={<MemberManagement />} />
@@ -76,6 +79,7 @@ function App() {
 
           <Route path="/admin/students" element={<AdminStudents />} />
 
+          
         </Route>
       </Routes>
     </Router>

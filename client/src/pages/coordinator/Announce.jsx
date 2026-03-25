@@ -91,7 +91,7 @@ const AnnounceEvent = () => {
                         <td className="fw-bold text-info">{event.title}</td>
                         <td className="text-light">{new Date(event.date).toLocaleDateString()}</td>
                         <td><span className="badge bg-primary bg-opacity-10 text-primary">{event.participants.length} Joined</span></td>
-                        <td><span className="text-secondary small">{event.volunteers.length} Assigned</span></td>
+                        {/* <td><span className="text-secondary small">{event.volunteers.length} Assigned</span></td> */}
                         <td className="text-end">
                           <button className="btn btn-sm btn-outline-info rounded-pill px-3" onClick={() => { setSelectedEvent(event); setView('manage'); }}>Manage</button>
                         </td>

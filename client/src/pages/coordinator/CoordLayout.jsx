@@ -9,7 +9,6 @@ const CoordLayout = () => {
     { name: 'Member Management', path: '/coord/members', icon: '👥' },
     { name: 'Event Approvals', path: '/coord/approvals', icon: '✅' },
     { name: 'Club Gallery', path: '/coord/gallery', icon: '🖼️' },
-    { name: 'Student Registrations', path: '/coord/dashboard/student-approvals', icon: '🎓' },
   ];
 
   return (

@@ -4,16 +4,23 @@ import { toast } from 'react-hot-toast';
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
+  const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ name: '', bio: '', branch: '' });
+
+  const [formData, setFormData] = useState({
+    name: '',
+    bio: '',
+    branch: '',
+    rollNo: '',
+    photo: ''
+  });
 
   const storedUser = JSON.parse(localStorage.getItem('user'));
   const userId = storedUser?._id || storedUser?.id;
 
-  // List of departments for the dropdown
   const departments = [
-    "Computer Science", "Information Technology", "Electronics", 
+    "Computer Science", "Information Technology", "Electronics",
     "Mechanical", "Civil", "Electrical", "Business Administration"
   ];
 
@@ -25,11 +32,18 @@ const Profile = () => {
     try {
       const res = await API.get(`/users/${userId}`);
       setProfile(res.data);
-      setFormData({ 
-        name: res.data.name, 
-        bio: res.data.bio || '', 
-        branch: res.data.branch || '' 
+
+      setFormData({
+        name: res.data.name,
+        bio: res.data.bio || '',
+        branch: res.data.branch || '',
+        rollNo: res.data.rollNo || '',
+        photo: res.data.photo || ''
       });
+
+      const regRes = await API.get(`/users/${userId}/registrations`);
+      setRegistrations(regRes.data);
+
     } catch (err) {
       toast.error("Could not load profile data.");
     } finally {
@@ -43,109 +57,176 @@ const Profile = () => {
       setProfile(res.data.user);
       setIsEditing(false);
       toast.success("Profile updated!");
-      localStorage.setItem('user', JSON.stringify({ ...storedUser, ...res.data.user }));
-    } catch (err) {
+    } catch {
       toast.error("Update failed.");
     }
   };
 
-  if (loading) return <div className="text-center p-5 mt-5"><div className="spinner-border text-info"></div></div>;
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData({ ...formData, photo: reader.result });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  if (loading) return <div className="text-center p-5 text-info">Loading...</div>;
 
   return (
-    <div className="container-fluid p-0">
-      <div className="rounded-4 overflow-hidden mb-4 shadow-lg" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #5d78ff 100%)', height: '150px' }}></div>
+    <div className="container-fluid p-4 text-white">
 
-      <div className="row px-3">
-        <div className="col-lg-4" style={{ marginTop: '-80px' }}>
-          <div className="card shadow-lg border-0 rounded-4 p-4 mb-4" style={{ backgroundColor: '#050a18', border: '1px solid #1a203c' }}>
-            <div className="text-center mb-3">
-              <img 
-                src={`https://ui-avatars.com/api/?name=${profile.name}&background=5d78ff&color=fff&size=128`} 
-                alt="Profile" 
-                className="rounded-circle border border-4 border-dark shadow-lg mb-3"
-                style={{ width: '120px', height: '120px' }}
-              />
-              {isEditing ? (
-                <input 
-                  className="form-control form-control-sm bg-dark text-white border-secondary text-center"
+      {/* HEADER */}
+      <div className="card p-4 mb-4 bg-dark border-secondary shadow">
+        <div className="d-flex align-items-center gap-4">
+
+          <img
+            src={formData.photo || `https://ui-avatars.com/api/?name=${profile.name}`}
+            className="rounded-circle border border-info"
+            style={{ width: "90px", height: "90px", objectFit: "cover" }}
+          />
+
+          <div>
+            <h3 className="text-info">{profile.name}</h3>
+            <p className="text-light mb-1">{profile.email}</p>
+            <p className="text-secondary mb-0">
+              🎓 {profile.branch || "No branch"} | 🆔 {profile.rollNo || "N/A"}
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      {/* STATS */}
+      <div className="row mb-4">
+
+        <div className="col-md-4">
+          <div className="card bg-dark border-secondary p-3 text-center">
+            <h4 className="text-info">{profile.joinedClubs?.length || 0}</h4>
+            <p className="text-light mb-0">Clubs Joined</p>
+          </div>
+        </div>
+
+        <div className="col-md-4">
+          <div className="card bg-dark border-secondary p-3 text-center">
+            <h4 className="text-success">{registrations.length}</h4>
+            <p className="text-light mb-0">Events Participated</p>
+          </div>
+        </div>
+
+        <div className="col-md-4">
+          <div className="card bg-dark border-secondary p-3 text-center">
+            <h4 className="text-warning">
+              {registrations.filter(r => r.status === "approved").length}
+            </h4>
+            <p className="text-light mb-0">Approved Events</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div className="row">
+
+        {/* LEFT PROFILE */}
+        <div className="col-lg-4">
+          <div className="card bg-dark border-secondary p-3 mb-4">
+
+            <h5 className="text-info mb-3">Profile Info</h5>
+
+            {isEditing ? (
+              <>
+                <input
+                  className="form-control mb-2 bg-dark text-white border-secondary"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="Your Name"
+                  placeholder="Name"
                 />
-              ) : (
-                <h4 className="fw-bold text-white mb-0">{profile.name}</h4>
-              )}
-              <p className="text-info small fw-semibold mt-1">{profile.roll || 'STUDENT'}</p>
-            </div>
 
-            <hr className="border-secondary opacity-25" />
+                <input
+                  className="form-control mb-2 bg-dark text-white border-secondary"
+                  value={formData.rollNo}
+                  onChange={(e) => setFormData({...formData, rollNo: e.target.value})}
+                  placeholder="Roll Number / Enrollment No"
+                />
 
-            <div className="mt-3">
-              <label className="text-secondary x-small text-uppercase fw-bold mb-1">About Me</label>
-              {isEditing ? (
-                <textarea 
-                  className="form-control bg-dark text-white border-secondary small"
-                  rows="3"
+                <textarea
+                  className="form-control mb-2 bg-dark text-white border-secondary"
                   value={formData.bio}
                   onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                  placeholder="Tell us about yourself..."
+                  placeholder="Bio"
                 />
-              ) : (
-                <p className="text-light small opacity-75">{profile.bio || "No bio added yet."}</p>
-              )}
-            </div>
 
-            <div className="mt-4">
-              {isEditing ? (
-                <button className="btn btn-success w-100 py-2 fw-bold rounded-pill mb-2" onClick={handleUpdate}>Save Changes</button>
-              ) : (
-                <button className="btn btn-info w-100 py-2 fw-bold text-dark rounded-pill mb-2" onClick={() => setIsEditing(true)}>Edit Profile</button>
-              )}
-              <button className="btn btn-outline-danger w-100 py-2 rounded-pill small" onClick={() => setIsEditing(false)}>
-                {isEditing ? 'Cancel' : 'Deactivate Account'}
-              </button>
-            </div>
+                <select
+                  className="form-select bg-dark text-white border-secondary mb-2"
+                  value={formData.branch}
+                  onChange={(e) => setFormData({...formData, branch: e.target.value})}
+                >
+                  <option>Select Branch</option>
+                  {departments.map(d => <option key={d}>{d}</option>)}
+                </select>
+
+                {/* IMAGE UPLOAD */}
+                <input
+                  type="file"
+                  className="form-control mb-2 bg-dark text-white border-secondary"
+                  onChange={handleImageChange}
+                />
+              </>
+            ) : (
+              <>
+                <p><span className="text-secondary">Branch:</span> <span className="text-light">{profile.branch || "N/A"}</span></p>
+                <p><span className="text-secondary">Roll No:</span> <span className="text-light">{profile.rollNo || "N/A"}</span></p>
+                <p><span className="text-secondary">Bio:</span> <span className="text-light">{profile.bio || "No bio"}</span></p>
+              </>
+            )}
+
+            <button
+              className="btn btn-info mt-2 w-100"
+              onClick={() => isEditing ? handleUpdate() : setIsEditing(true)}
+            >
+              {isEditing ? "Save Changes" : "Edit Profile"}
+            </button>
+
           </div>
         </div>
 
+        {/* RIGHT SIDE */}
         <div className="col-lg-8">
-          <div className="card shadow-lg border-0 rounded-4 p-4 mb-4" style={{ backgroundColor: '#050a18', border: '1px solid #1a203c' }}>
-            <h5 className="fw-bold text-white mb-4">Academic Details</h5>
-            <div className="row g-4">
-              <div className="col-md-6">
-                <label className="text-secondary small mb-1">Department / Branch</label>
-                {isEditing ? (
-                  <select 
-                    className="form-select bg-dark text-white border-secondary"
-                    value={formData.branch}
-                    onChange={(e) => setFormData({...formData, branch: e.target.value})}
-                  >
-                    <option value="">Select Branch</option>
-                    {departments.map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="p-3 rounded-3 text-white border border-secondary border-opacity-25" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                    {profile.branch || "Not Specified"}
-                  </div>
-                )}
-              </div>
-              <div className="col-md-6">
-                <label className="text-secondary small mb-1">Email Address</label>
-                <div className="p-3 rounded-3 text-white border border-secondary border-opacity-25 opacity-50" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  {profile.email}
+
+          {/* EVENTS */}
+          <div className="card bg-dark border-secondary p-3 mb-4">
+            <h5 className="text-info mb-3">My Events</h5>
+
+            {registrations.length === 0 ? (
+              <p className="text-secondary">No events participated</p>
+            ) : (
+              registrations.map(reg => (
+                <div key={reg._id} className="border-bottom pb-2 mb-2">
+
+                  <h6 className="text-light">{reg.eventId?.title}</h6>
+
+                  <p className="text-secondary small mb-1">
+                    📍 {reg.clubId?.name}
+                  </p>
+
+                  <span className={`badge ${
+                    reg.status === "approved"
+                      ? "bg-success"
+                      : "bg-warning text-dark"
+                  }`}>
+                    {reg.status}
+                  </span>
+
                 </div>
-              </div>
-              <div className="col-md-6">
-                <label className="text-secondary small mb-1">Member Since</label>
-                <div className="p-3 rounded-3 text-white border border-secondary border-opacity-25" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  {new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                </div>
-              </div>
-            </div>
+              ))
+            )}
+
           </div>
+
         </div>
+
       </div>
     </div>
   );

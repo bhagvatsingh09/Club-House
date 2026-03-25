@@ -4,18 +4,47 @@ const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   date: { type: Date, required: true },
-  time: { type: String }, // Added time field for UI consistency
+  time: { type: String },
   location: { type: String, required: true },
-  club: { type: mongoose.Schema.Types.ObjectId, ref: 'Club', required: true },
-  
-  // Participant Logic
+
+  participationType: {
+    type: String,
+    enum: ["individual", "group"],
+    default: "individual"
+  },
+
+  teamSize: { type: Number, default: 1 },
+
+  club: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Club',
+    required: true
+  },
+
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   pendingParticipants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  volunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  extraParticipants: [
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    name: String,
+    roll: String,
+    department: String
+  }
+],
+
+  groupRegistrations: [
+    {
+      leader: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      members: [String]
+    }
+  ],
+
+  capacity: { type: Number, default: 100 }
+
   
-  capacity: { type: Number, default: 100 },
-  banner: { type: String }, 
-  status: { type: String, enum: ['upcoming', 'completed', 'cancelled'], default: 'upcoming' }
+
 }, { timestamps: true });
 
-module.exports = mongoose.model('Event', EventSchema);
+  
+
+module.exports = mongoose.model("Event", EventSchema);

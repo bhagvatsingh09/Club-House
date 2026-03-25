@@ -22,9 +22,9 @@ router.get('/dashboard/:studentId', async (req, res) => {
             .sort({ registeredAt: -1 });
 
         const announcements = await Event.find({
-            clubId: { $in: student.joinedClubs || [] }
+            club: { $in: student.joinedClubs || [] }
         })
-        .populate('clubId', 'name')
+        .populate('club', 'name')
         .sort({ createdAt: -1 })
         .limit(5);
 
@@ -98,28 +98,7 @@ router.put("/approve-registration", async (req, res) => {
   }
 });
 
-router.get("/students", async (req, res) => {
-  try {
 
-    const registrations = await Registration.find()
-      .populate("userId", "name email studentId")
-      .populate("clubId", "name")
-      .populate("eventId", "title");
 
-    const students = registrations.map(r => ({
-      name: r.userId?.name,
-      email: r.userId?.email,
-      studentId: r.userId?.studentId,
-      clubName: r.clubId?.name,
-      eventName: r.eventId?.title
-    }));
-
-    res.json(students);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error fetching students" });
-  }
-});
 
 module.exports = router;

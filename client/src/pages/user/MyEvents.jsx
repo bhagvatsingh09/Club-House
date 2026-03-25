@@ -116,11 +116,6 @@ const MyEvents = () => {
                           >
                             Cancel
                           </button>
-                          {isApproved && (
-                            <button className="btn btn-info btn-sm px-4 rounded-pill text-dark fw-semibold">
-                              Ticket
-                            </button>
-                          )}
                         </div>
                       ) : (
                         <button className="btn btn-outline-secondary btn-sm px-4 rounded-pill" disabled={!isApproved}>

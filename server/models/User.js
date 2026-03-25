@@ -23,7 +23,9 @@ const UserSchema = new mongoose.Schema({
   // Role within a specific club (e.g., Volunteer)
   clubRole: { type: String, enum: ['Member', 'Volunteer'], default: 'Member' },
   bio: { type: String, default: "No Bio Added" },
-  branch: { type: String }
+  branch: { type: String },
+  rollNo: { type: String },
+photo: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

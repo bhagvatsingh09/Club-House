@@ -1,43 +1,37 @@
 const router = require("express").Router();
-
 const User = require("../models/User");
 const Event = require("../models/Event");
 const Gallery = require("../models/Gallery");
 const Club = require("../models/Club");
-
+const Notification = require("../models/Notification");
+const multer = require("multer");
+const path = require("path");
 
 // ============================
 // GET ALL CLUBS
 // ============================
 router.get("/", async (req, res) => {
   try {
-
     const clubs = await Club.find({ status: "Active" });
-
     res.json(clubs);
-
-  } catch (err) {
-
-    console.log(err);
-
+  } catch {
     res.status(500).json({ message: "Error fetching clubs" });
-
   }
 });
 
-
 // ============================
-// GET CLUB DASHBOARD STATS
+// CLUB STATS
 // ============================
 router.get("/:clubId/stats", async (req, res) => {
   try {
-
     const clubId = req.params.clubId;
 
-    const members = await User.countDocuments({ clubId: clubId });
+    const members = await User.countDocuments({
+      clubId,
+      role: "Student"
+    });
 
     const events = await Event.countDocuments({ club: clubId });
-
     const gallery = await Gallery.countDocuments({ club: clubId });
 
     const pendingEvents = await Event.find({
@@ -46,9 +40,8 @@ router.get("/:clubId/stats", async (req, res) => {
     });
 
     let pendingApprovals = 0;
-
-    pendingEvents.forEach(event => {
-      pendingApprovals += event.pendingParticipants.length;
+    pendingEvents.forEach(e => {
+      pendingApprovals += e.pendingParticipants.length;
     });
 
     const club = await Club.findById(clubId);
@@ -61,363 +54,158 @@ router.get("/:clubId/stats", async (req, res) => {
       pendingApprovals
     });
 
-  } catch (err) {
-
-    console.log(err);
-
-    res.status(500).json({
-      message: "Failed to load dashboard stats"
-    });
-
+  } catch {
+    res.status(500).json({ message: "Stats failed" });
   }
 });
 
-
 // ============================
-// JOIN CLUB
+// JOIN CLUB (MULTI CLUB FIX)
 // ============================
 router.post("/students/join-club", async (req, res) => {
-
   try {
-
     const { userId, clubId } = req.body;
 
     const user = await User.findById(userId);
 
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (user.joinedClubs.includes(clubId))
+    if (user.joinedClubs.includes(clubId)) {
       return res.status(400).json({ message: "Already joined" });
+    }
 
     user.joinedClubs.push(clubId);
-    user.clubId = clubId;
-
     await user.save();
 
-    await Club.findByIdAndUpdate(
-      clubId,
-      { $inc: { membersCount: 1 } }
-    );
+    await Club.findByIdAndUpdate(clubId, {
+      $inc: { membersCount: 1 }
+    });
 
     res.json({ message: "Joined successfully" });
 
-  } catch (err) {
-
-    res.status(500).json({ message: "Server error" });
-
+  } catch {
+    res.status(500).json({ message: "Join failed" });
   }
-
 });
-
 
 // ============================
 // GET MEMBERS
 // ============================
 router.get("/:clubId/members", async (req, res) => {
-
   try {
-
     const members = await User.find({
       clubId: req.params.clubId,
       role: "Student"
     }).select("name email roll clubRole");
 
     res.json(members);
-
-  } catch (err) {
-
+  } catch {
     res.status(500).json({ message: "Error fetching members" });
-
   }
-
 });
 
+// ============================
+// NOTIFICATIONS
+// ============================
+router.get('/notifications/:clubId', async (req, res) => {
+  try {
+    const notifications = await Notification.find({
+      club: req.params.clubId
+    }).sort({ createdAt: -1 });
+
+    res.json(notifications);
+  } catch {
+    res.status(500).json({ message: "Failed to load notifications" });
+  }
+});
 
 // ============================
-// UPDATE ROLE
+// UPDATE MEMBER ROLE
 // ============================
 router.put("/update-role/:userId", async (req, res) => {
-
   try {
+    const { role } = req.body;
 
-    const updatedUser = await User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
       req.params.userId,
-      { clubRole: req.body.role },
+      { clubRole: role },
       { new: true }
     );
 
-    res.json(updatedUser);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ message: "Role updated", user });
 
   } catch (err) {
-
-    res.status(500).json({ message: "Update failed" });
-
+    res.status(500).json({ message: "Failed to update role" });
   }
-
 });
-
 
 // ============================
 // REMOVE MEMBER
 // ============================
 router.put("/remove-member/:userId", async (req, res) => {
-
   try {
-
     const user = await User.findById(req.params.userId);
 
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const clubId = user.clubId;
-
+    // Remove club relation
     user.clubId = null;
     user.clubRole = "Member";
 
-    user.joinedClubs = user.joinedClubs.filter(
-      c => c.toString() !== clubId.toString()
-    );
-
     await user.save();
-
-    await Club.findByIdAndUpdate(
-      clubId,
-      { $inc: { membersCount: -1 } }
-    );
 
     res.json({ message: "Member removed" });
 
   } catch (err) {
-
-    res.status(500).json({ message: "Removal failed" });
-
+    res.status(500).json({ message: "Failed to remove member" });
   }
-
 });
-router.get("/:clubId/registrations", async (req, res) => {
 
+// ============================
+// MULTER CONFIG
+// ============================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
+
+// ============================
+// UPLOAD CLUB BANNER
+// ============================
+router.post("/:clubId/upload-banner", upload.single("banner"), async (req, res) => {
   try {
-
     const clubId = req.params.clubId;
 
-    const events = await Event.find({ club: clubId })
-      .populate("pendingParticipants", "name email");
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
 
-    let registrations = [];
+    const bannerUrl = `/uploads/${req.file.filename}`;
 
-    events.forEach(event => {
-
-      if (!event.pendingParticipants) return;
-
-      event.pendingParticipants.forEach(student => {
-
-        registrations.push({
-          studentId: student._id,
-          name: student.name,
-          email: student.email,
-          clubName: event.clubName || "Club",
-          eventName: event.title,
-          eventId: event._id
-        });
-
-      });
-
-    });
-
-    res.json(registrations);
-
-  } catch (err) {
-
-    console.log("Registration fetch error:", err);
-
-    res.status(500).json({ message: "Server Error" });
-
-  }
-
-});
-
-// ============================
-// GET APPROVED STUDENTS (CLUB)
-// ============================
-router.get("/:clubId/approved-students", async (req, res) => {
-
-  try {
-
-    const clubId = req.params.clubId;
-
-    const events = await Event.find({ club: clubId })
-      .populate("participants", "name email");
-
-    let approvedStudents = [];
-
-    events.forEach(event => {
-
-      if (!event.participants) return;
-
-      event.participants.forEach(student => {
-
-        approvedStudents.push({
-          studentId: student._id,
-          name: student.name,
-          email: student.email,
-          clubName: event.clubName,
-          eventName: event.title
-        });
-
-      });
-
-    });
-
-    res.json(approvedStudents);
-
-  } catch (err) {
-
-    console.log(err);
-    res.status(500).json({ message: "Error fetching approved students" });
-
-  }
-
-});
-// ============================
-// CLUB - GET APPROVED STUDENTS
-// ============================
-router.get("/club/:clubId/approved-students", async (req, res) => {
-
-  const events = await Event.find({
-    club: req.params.clubId
-  })
-  .populate("participants", "name email");
-
-  let students = [];
-
-  events.forEach(event => {
-
-    event.participants.forEach(student => {
-
-      students.push({
-        studentId: student._id,
-        name: student.name,
-        email: student.email,
-        eventName: event.title,
-        eventId: event._id
-      });
-
-    });
-
-  });
-
-  res.json(students);
-
-});
-
-router.get("/club/:clubId/stats", async (req, res) => {
-
-  try {
-
-    const clubId = req.params.clubId;
-
-    const club = await Club.findById(clubId);
-
-    // active members of this club
-    const members = await User.countDocuments({
-      club: clubId
-    });
-
-    // events of this club
-    const events = await Event.countDocuments({
-      club: clubId
-    });
-
-    // gallery items of this club
-    const gallery = await Gallery.countDocuments({
-      club: clubId
-    });
-
-    // pending event approvals
-    const pendingApprovals = await Event.countDocuments({
-      club: clubId,
-      status: "pending"
-    });
+    const updatedClub = await Club.findByIdAndUpdate(
+      clubId,
+      { banner: bannerUrl },
+      { new: true }
+    );
 
     res.json({
-      clubName: club.name,
-      members,
-      events,
-      gallery,
-      pendingApprovals
+      message: "Banner uploaded successfully",
+      banner: bannerUrl,
+      club: updatedClub
     });
 
   } catch (err) {
-
-    console.error(err);
-
-    res.status(500).json({
-      message: "Server Error"
-    });
-
+    console.error("Banner upload error:", err);
+    res.status(500).json({ message: "Upload failed" });
   }
-
-});
-
-router.get("/:clubId/stats", async (req, res) => {
-  try {
-    const clubId = req.params.clubId;
-
-    // Only student members
-    const members = await User.countDocuments({ clubId: clubId, role: "Student" });
-
-    const events = await Event.countDocuments({ club: clubId });
-    const gallery = await Gallery.countDocuments({ club: clubId });
-
-    const pendingEvents = await Event.find({
-      club: clubId,
-      pendingParticipants: { $exists: true, $not: { $size: 0 } }
-    });
-
-    let pendingApprovals = 0;
-    pendingEvents.forEach(event => {
-      pendingApprovals += event.pendingParticipants.length;
-    });
-
-    const club = await Club.findById(clubId);
-
-    res.json({
-      clubName: club?.name || "Club",
-      members,
-      events,
-      gallery,
-      pendingApprovals
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to load dashboard stats" });
-  }
-});
-
-// ============================
-// GET CLUB NOTIFICATIONS
-// ============================
-router.get('/notifications/:clubId', async (req, res) => {
-
-  try {
-
-    const notifications = await Notification.find({
-      club: req.params.clubId
-    })
-    .sort({ createdAt: -1 });
-
-    res.json(notifications);
-
-  } catch (err) {
-
-    res.status(500).json({
-      message: "Failed to load notifications"
-    });
-
-  }
-
 });
 
 module.exports = router;

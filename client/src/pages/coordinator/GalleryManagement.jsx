@@ -6,6 +6,12 @@ const GalleryManagement = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+
+  const [bannerFile, setBannerFile] = useState(null);
+const [clubBanner, setClubBanner] = useState("");
+const [bannerUploading, setBannerUploading] = useState(false);
+
+
   
   const [selectedFile, setSelectedFile] = useState(null);
   const [mediaTitle, setMediaTitle] = useState('');
@@ -16,6 +22,9 @@ const GalleryManagement = () => {
   const serverUrl = 'http://localhost:5000';
 
   const fetchData = async () => {
+const clubRes = await API.get(`/club`);
+const currentClub = clubRes.data.find(c => c._id === clubId);
+setClubBanner(currentClub?.banner || "");
     if (!clubId) return;
     try {
       const [mediaRes, eventRes] = await Promise.all([
@@ -30,6 +39,31 @@ const GalleryManagement = () => {
       setLoading(false);
     }
   };
+
+  const handleBannerUpload = async (e) => {
+  e.preventDefault();
+
+  if (!bannerFile) return alert("Select banner image");
+
+  const formData = new FormData();
+  formData.append("banner", bannerFile);
+
+  setBannerUploading(true);
+
+  try {
+    const res = await API.post(`/club/${clubId}/upload-banner`, formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+
+    setClubBanner(res.data.banner);
+    setBannerFile(null);
+
+  } catch {
+    alert("Banner upload failed");
+  } finally {
+    setBannerUploading(false);
+  }
+};
 
   useEffect(() => { fetchData(); }, [clubId]);
 
@@ -87,10 +121,49 @@ const GalleryManagement = () => {
 
   return (
     <div className="container-fluid p-0">
+
+      {/* ================= CLUB BANNER ================= */}
+<div className="mb-4">
+  <div className="card p-3 border-0 shadow-sm" style={{ backgroundColor: '#050a18' }}>
+
+    <h6 className="text-info mb-3">Club Banner</h6>
+
+    {/* SHOW BANNER */}
+    {clubBanner ? (
+      <img
+        src={`${serverUrl}${clubBanner}`}
+        alt="Club Banner"
+        className="w-100 rounded mb-3"
+        style={{ height: "180px", objectFit: "cover" }}
+      />
+    ) : (
+      <div className="text-secondary mb-3">No banner uploaded</div>
+    )}
+
+    {/* UPLOAD */}
+    <form onSubmit={handleBannerUpload}>
+      <input
+        type="file"
+        className="form-control mb-2 bg-dark text-white border-secondary"
+        onChange={(e) => setBannerFile(e.target.files[0])}
+      />
+
+      <button
+        className="btn btn-info btn-sm text-dark"
+        disabled={bannerUploading}
+      >
+        {bannerUploading ? "Uploading..." : "Upload / Update Banner"}
+      </button>
+    </form>
+
+  </div>
+</div>
+      
       <div className="mb-5">
         <h2 className="fw-bold text-white mb-1">Club Gallery</h2>
         <p className="text-secondary mb-0">Hover over videos to preview them.</p>
       </div>
+      
 
       <div className="row g-4">
         {/* Upload Form */}

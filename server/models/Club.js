@@ -29,12 +29,6 @@ const ClubSchema = new mongoose.Schema({
     default: ""
   },
 
-  images: [
-    {
-      type: String
-    }
-  ],
-
   status: {
     type: String,
     enum: ["Active", "Inactive"],
@@ -44,8 +38,16 @@ const ClubSchema = new mongoose.Schema({
   membersCount: {
     type: Number,
     default: 0
-  }
+  },
+image: {
+  type: String,
+  default: "https://via.placeholder.com/300x200"
+}
+  
+
+  
 
 }, { timestamps: true });
+
 
 module.exports = mongoose.model("Club", ClubSchema);

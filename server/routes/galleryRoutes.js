@@ -19,6 +19,7 @@ const upload = multer({ storage });
 router.get('/club/:clubId', async (req, res) => {
   try {
     const media = await Gallery.find({ clubId: req.params.clubId }).sort({ createdAt: -1 });
+    // console.log("Fetching media for club:", req.params.clubId);
     res.json(media);
   } catch (err) {
     res.status(500).json({ message: "Error fetching gallery" });
@@ -56,5 +57,20 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ message: "Delete failed" });
   }
 });
+
+// ============================
+// GET MEDIA OF A CLUB
+// ============================
+// router.get("/:clubId", async (req, res) => {
+//   try {
+//     const media = await Gallery.find({ clubId: req.params.clubId })
+//       .sort({ createdAt: -1 });
+
+//     res.json(media);
+
+//   } catch (err) {
+//     res.status(500).json({ message: "Failed to fetch media" });
+//   }
+// });
 
 module.exports = router;

@@ -10,111 +10,171 @@ const StudentDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  const fetchStudentData = async () => {
-    // Check if user exists AND has an ID (check for both ._id and .id)
-    const userId = user?._id || user?.id; 
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      const userId = user?._id || user?.id;
 
-    if (!userId) {
-      console.warn("No User ID found, skipping fetch");
-      setLoading(false);
-      return;
-    }
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
 
-    try {
-      const res = await API.get(`/students/dashboard/${userId}`);
-      setDashboardData(res.data);
-    } catch (err) {
-      console.error("Error loading student dashboard:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchStudentData();
-}, [user]);
+      try {
+        const res = await API.get(`/student/dashboard/${userId}`);
+        setDashboardData(res.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (loading) return <div className="p-5 text-info text-center">Loading your profile...</div>;
+    fetchStudentData();
+  }, [user]);
+
+  if (loading)
+    return <div className="text-center text-info mt-5">Loading...</div>;
 
   return (
-    <>
+    <div className="container-fluid p-4">
+
+      {/* HEADER */}
       <div className="mb-5">
-        <h2 className="fw-bold text-white">Welcome back, {user.name.split(' ')[0]}! 👋</h2>
-        <p className="text-secondary">Here's what's happening with your clubs today.</p>
+        <h2 className="fw-bold text-white">
+          Welcome back, {user?.name?.split(' ')[0] || "User"} 👋
+        </h2>
+        <p className="text-secondary">Here’s your activity overview</p>
       </div>
 
       <div className="row g-4">
-        {/* Left Column: Clubs and Status */}
+
+        {/* LEFT SIDE */}
         <div className="col-lg-8">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h5 className="fw-bold text-info mb-0">Your Clubs</h5>
-          </div>
-          
-          <div className="row g-3">
-            {dashboardData.joinedClubs.length > 0 ? (
-              dashboardData.joinedClubs.map(club => (
-                <div className="col-md-6" key={club._id}>
-                  <div className="card glass-input border-0 p-4 h-100 shadow-sm" style={{ backgroundColor: '#0a1128' }}>
-                    <div className="d-flex justify-content-between align-items-start mb-3">
-                      <h5 className="mb-0 text-white">{club.name}</h5>
-                      <span className="badge rounded-pill bg-success bg-opacity-10 text-success">Active</span>
+
+          {/* CLUBS */}
+          <div className="col-lg-8">
+            <h5 className="text-info mb-3">Your Clubs</h5>
+
+            <div className="d-flex flex-column gap-3">
+              {dashboardData.joinedClubs.length > 0 ? (
+                dashboardData.joinedClubs.map(club => (
+                  <div
+                    key={club._id}
+                    className="card bg-dark text-white p-3 shadow-sm"
+                    style={{
+                      borderRadius: "12px",
+                      transition: "0.3s"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "scale(1.02)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    <div className="d-flex justify-content-between align-items-center">
+
+                      {/* LEFT SIDE */}
+                      <div>
+                        <h5 className="mb-1">{club.name}</h5>
+                        <p className="text-secondary small mb-0">
+                          Active Club Member
+                        </p>
+                      </div>
+
+                      {/* RIGHT SIDE */}
+                      <button className="btn btn-outline-info btn-sm">
+                        View
+                      </button>
+
                     </div>
-                    <p className="text-secondary small mb-0">Role: Member</p>
-                    <button className="btn btn-sm btn-outline-info mt-3 w-100">Visit Club</button>
                   </div>
-                </div>
-              ))
-            ) : (
-              <div className="col-12"><p className="text-secondary">You haven't joined any clubs yet.</p></div>
-            )}
+                ))
+              ) : (
+                <p className="text-secondary">No clubs joined</p>
+              )}
+            </div>
           </div>
 
-          {/* Event Registrations Table */}
+          {/* REGISTRATIONS */}
           <div className="mt-5">
-            <h5 className="mb-4 fw-bold text-info">Recent Event Registrations</h5>
-            <div className="table-responsive glass-input p-3 border-0 rounded-3" style={{ backgroundColor: '#0a1128' }}>
+            <h5 className="text-info mb-3">Recent Registrations</h5>
+
+            <div className="dash-card p-3">
+
               <table className="table table-dark table-hover mb-0">
                 <thead>
-                  <tr className="text-secondary border-secondary">
-                    <th>Event Name</th>
+                  <tr className="text-secondary">
+                    <th>Event</th>
                     <th>Club</th>
                     <th>Status</th>
                   </tr>
                 </thead>
-                <tbody className="border-0">
-                  {dashboardData.registrations.map(reg => (
-                    <tr key={reg._id}>
-                      <td>{reg.eventId?.title}</td>
-                      <td>{reg.clubId?.name}</td>
-                      <td>
-                        <span className={`badge bg-opacity-25 ${reg.status === 'approved' ? 'bg-success text-success' : 'bg-warning text-warning'}`}>
-                          {reg.status}
-                        </span>
+
+                <tbody>
+                  {dashboardData.registrations.length > 0 ? (
+                    dashboardData.registrations.map(reg => (
+                      <tr key={reg._id}>
+                        <td>{reg.eventId?.title}</td>
+                        <td>{reg.clubId?.name}</td>
+                        <td>
+                          <span className={`badge ${reg.status === "approved"
+                              ? "bg-success"
+                              : "bg-warning text-dark"
+                            }`}>
+                            {reg.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="text-center text-secondary">
+                        No registrations yet
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
+
               </table>
+
             </div>
           </div>
+
         </div>
 
-        {/* Right Column: Announcements */}
+        {/* RIGHT SIDE */}
         <div className="col-lg-4">
-          <h5 className="mb-4 fw-bold text-info">Announcements</h5>
-          <div className="d-flex flex-column gap-3">
-            {dashboardData.announcements.map(news => (
-              <div className="card border-0 p-3 shadow-sm" key={news._id} style={{ backgroundColor: '#1a203c' }}>
-                <h6 className="mb-1 text-white">{news.title}</h6>
-                <div className="d-flex justify-content-between align-items-center">
-                  <span className="text-info small fw-bold">{news.clubId?.name}</span>
-                  <span className="text-secondary x-small">{new Date(news.createdAt).toLocaleDateString()}</span>
+
+          <h5 className="text-info mb-3">Announcements</h5>
+
+          {dashboardData.announcements.length > 0 ? (
+            dashboardData.announcements.map(news => (
+              <div key={news._id} className="dash-card mb-3">
+
+                <h6 className="text-white">{news.title}</h6>
+
+                <div className="d-flex justify-content-between mt-2">
+                  <span className="text-info small">
+                    {news.club?.name}
+                  </span>
+
+                  <span className="text-secondary small">
+                    {new Date(news.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
+
               </div>
-            ))}
-          </div>
+            ))
+          ) : (
+            <p className="text-secondary">No announcements</p>
+          )}
+
         </div>
+
       </div>
-    </>
+
+    </div>
   );
 };
 

@@ -7,13 +7,14 @@ const Task = require('../models/Task');
 const Media = require('../models/Media');
 const Event = require('../models/Event');
 const Registration = require('../models/Registration');
+const Galleries = require('../models/Gallery');
 
 router.get("/students", async (req, res) => {
   try {
     // 1. Fetch students and populate the 'joinedClubs' field from the Clubs collection
     const students = await User.find({ role: "Student" })
       .select("name email joinedClubs")
-      .populate("joinedClubs", "name"); 
+      .populate("joinedClubs", "name");
 
     // 2. Format the response
     const formattedData = students.map(s => ({
@@ -21,7 +22,7 @@ router.get("/students", async (req, res) => {
       name: s.name,
       email: s.email,
       // Map the populated objects to just get the names
-      clubs: s.joinedClubs.map(club => club.name) 
+      clubs: s.joinedClubs.map(club => club.name)
     }));
 
     res.json(formattedData);
@@ -261,94 +262,65 @@ router.delete('/delete-task/:id', async (req, res) => {
 
 
 // ============================
-// GALLERY OVERVIEW
+// ADMIN: GALLERY OVERVIEW
 // ============================
 router.get('/gallery/overview', async (req, res) => {
   try {
+    const clubs = await Club.find({});
 
-    const clubs = await Club.find().select('name');
-
-    const overview = await Promise.all(
-
+    const result = await Promise.all(
       clubs.map(async (club) => {
 
-        const images = await Media.countDocuments({
-          club: club._id,
-          type: 'image'
-        });
+        const media = await Galleries.find({ clubId: club._id });
 
-        const videos = await Media.countDocuments({
-          club: club._id,
-          type: 'video'
-        });
-
-        const lastMedia = await Media
-          .findOne({ club: club._id, type: 'image' })
-          .sort({ createdAt: -1 });
+        const imageCount = media.filter(m => m.type === "image").length;
+        const videoCount = media.filter(m => m.type === "video").length;
 
         return {
           _id: club._id,
           name: club.name,
-          imageCount: images,
-          videoCount: videos,
-          cover: lastMedia
-            ? lastMedia.url
-            : 'https://placehold.co/400x300/050a18/white?text=No+Media'
+          banner: club.banner || club.image,
+          imageCount,
+          videoCount
         };
-
       })
-
     );
 
-    res.json(overview);
+    res.json(result);
 
   } catch (err) {
-
-    res.status(500).json({ message: err.message });
-
+    console.error("Overview error:", err);
+    res.status(500).json({ message: "Failed to load overview" });
   }
 });
 
-
 // ============================
-// GET CLUB MEDIA
+// ADMIN: GET CLUB MEDIA
 // ============================
 router.get('/gallery/:clubId', async (req, res) => {
   try {
-
-    const media = await Media.find({
-      club: req.params.clubId
-    }).sort({ createdAt: -1 });
+    const media = await Galleries.find({ clubId: req.params.clubId })
+      .sort({ createdAt: -1 });
 
     res.json(media);
 
   } catch (err) {
-
-    res.status(500).json({ message: err.message });
-
+    res.status(500).json({ message: "Failed to fetch media" });
   }
 });
 
 
 // ============================
-// DELETE MEDIA
+// ADMIN: DELETE MEDIA
 // ============================
-router.delete('/gallery/media/:mediaId', async (req, res) => {
+router.delete('/gallery/media/:id', async (req, res) => {
   try {
-
-    await Media.findByIdAndDelete(req.params.mediaId);
-
-    res.json({ message: "Asset deleted" });
-
-  } catch (err) {
-
-    res.status(500).json({
-      message: "Deletion failed"
-    });
-
+    await Galleries.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted successfully" });
+  } catch {
+    res.status(500).json({ message: "Delete failed" });
   }
 });
-
 
 // ============================
 // ADMIN DASHBOARD STATS

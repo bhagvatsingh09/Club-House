@@ -2,119 +2,170 @@ import React, { useState, useEffect } from 'react';
 import API from '../../api/axios';
 
 const EventApprovals = () => {
+  const [activeTab, setActiveTab] = useState("pending");
   const [pendingList, setPendingList] = useState([]);
+  const [approvedList, setApprovedList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState(null); // To disable buttons while processing
+  const [processingId, setProcessingId] = useState(null);
 
   const user = JSON.parse(localStorage.getItem('user'));
   const clubId = user?.clubId;
 
-  const fetchPendingApprovals = async () => {
+  const fetchData = async () => {
     if (!clubId) return;
+
     try {
-      const res = await API.get(`/events/club/${clubId}/pending`);
-      setPendingList(res.data);
+      setLoading(true);
+
+      const [pendingRes, approvedRes] = await Promise.all([
+        API.get(`/events/club/${clubId}/pending`),
+        API.get(`/events/club/${clubId}/approved`)
+      ]);
+
+      setPendingList(pendingRes.data);
+      setApprovedList(approvedRes.data);
+
     } catch (err) {
-      console.error("Failed to fetch pending approvals", err);
+      console.error("Error fetching approvals:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPendingApprovals();
+    fetchData();
   }, [clubId]);
 
   const handleAction = async (eventId, userId, action) => {
-    setProcessingId(userId); // Show loading state on the specific row
+    setProcessingId(userId);
+
     try {
       if (action === 'approve') {
         await API.put(`/events/${eventId}/approve/${userId}`);
-      } else if (action === 'reject') {
-        if (!window.confirm("Are you sure you want to reject this application?")) {
+      } else {
+        if (!window.confirm("Reject this student?")) {
           setProcessingId(null);
           return;
         }
         await API.put(`/events/${eventId}/reject/${userId}`);
       }
-      // Remove the processed user from the UI immediately without requiring a full refetch
-      setPendingList(prev => prev.filter(item => item.user._id !== userId || item.eventId !== eventId));
+
+      fetchData(); // refresh both tabs
+
     } catch (err) {
-      alert(`Failed to ${action} student. Please try again.`);
+      alert("Action failed");
     } finally {
       setProcessingId(null);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-info"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="container-fluid p-0">
-      <div className="mb-5">
-        <h2 className="fw-bold text-white">Event Approvals</h2>
-        <p className="text-secondary">Review and approve student registrations for upcoming events.</p>
+
+      <h2 className="text-white mb-3">Event Approvals</h2>
+
+      {/* 🔥 TABS */}
+      <div className="mb-4">
+        <button
+          className={`btn me-2 ${activeTab === "pending" ? "btn-info text-dark" : "btn-outline-info"}`}
+          onClick={() => setActiveTab("pending")}
+        >
+          Pending
+        </button>
+
+        <button
+          className={`btn ${activeTab === "approved" ? "btn-success" : "btn-outline-success"}`}
+          onClick={() => setActiveTab("approved")}
+        >
+          Approved
+        </button>
       </div>
 
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-info" role="status"></div>
-        </div>
-      ) : pendingList.length > 0 ? (
-        <div className="table-responsive shadow-lg rounded-4 p-3" style={{ backgroundColor: '#050a18', border: '1px solid #1a203c' }}>
-          <table className="table table-dark table-hover align-middle mb-0 border-0">
-            <thead>
-              <tr className="text-secondary small border-bottom border-dark">
-                <th className="bg-transparent">STUDENT NAME</th>
-                <th className="bg-transparent">ROLL NUMBER</th>
-                <th className="bg-transparent">EVENT</th>
-                <th className="bg-transparent">EVENT DATE</th>
-                <th className="text-end bg-transparent">ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingList.map((app, index) => (
-                <tr key={`${app.eventId}-${app.user._id}-${index}`} className="border-bottom border-dark border-opacity-50">
-                  <td className="fw-bold text-white bg-transparent">
-                    {app.user.name}
-                    <div className="text-secondary d-md-none small">{app.user.roll}</div>
-                  </td>
-                  <td className="text-secondary bg-transparent d-none d-md-table-cell">
-                    {app.user.roll || 'N/A'}
-                  </td>
-                  <td className="bg-transparent">
-                    <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1">
-                      {app.eventName}
-                    </span>
-                  </td>
-                  <td className="text-secondary small bg-transparent">
-                    {new Date(app.eventDate).toLocaleDateString()}
-                  </td>
-                  <td className="text-end bg-transparent">
-                    <button 
-                      className="btn btn-sm btn-outline-danger me-2 rounded-pill px-3 fw-bold"
-                      onClick={() => handleAction(app.eventId, app.user._id, 'reject')}
-                      disabled={processingId === app.user._id}
-                    >
-                      Reject
-                    </button>
-                    <button 
-                      className="btn btn-sm btn-info rounded-pill px-3 text-dark fw-bold"
-                      onClick={() => handleAction(app.eventId, app.user._id, 'approve')}
-                      disabled={processingId === app.user._id}
-                    >
-                      {processingId === app.user._id ? 'Processing...' : 'Approve'}
-                    </button>
-                  </td>
+      {/* ================= PENDING TAB ================= */}
+      {activeTab === "pending" && (
+        pendingList.length === 0 ? (
+          <p className="text-secondary">No pending approvals</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-dark table-hover">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Roll</th>
+                  <th>Event</th>
+                  <th>Date</th>
+                  <th className="text-end">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="card border-0 rounded-4 p-5 text-center shadow" style={{ backgroundColor: '#0a1128', border: '1px solid #1a203c' }}>
-          <div className="display-4 mb-3 opacity-50">🎉</div>
-          <h4 className="text-white fw-bold">All Caught Up!</h4>
-          <p className="text-secondary mb-0">There are no pending event approvals at this time.</p>
-        </div>
+              </thead>
+              <tbody>
+                {pendingList.map((app, i) => (
+                  <tr key={i}>
+                    <td>{app.user.name}</td>
+                    <td>{app.user.roll || "N/A"}</td>
+                    <td>{app.eventName}</td>
+                    <td>{new Date(app.eventDate).toLocaleDateString()}</td>
+                    <td className="text-end">
+                      <button
+                        className="btn btn-danger btn-sm me-2"
+                        onClick={() => handleAction(app.eventId, app.user._id, 'reject')}
+                        disabled={processingId === app.user._id}
+                      >
+                        Reject
+                      </button>
+                      <button
+                        className="btn btn-info btn-sm text-dark"
+                        onClick={() => handleAction(app.eventId, app.user._id, 'approve')}
+                        disabled={processingId === app.user._id}
+                      >
+                        {processingId === app.user._id ? "..." : "Approve"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
+
+      {/* ================= APPROVED TAB ================= */}
+      {activeTab === "approved" && (
+        approvedList.length === 0 ? (
+          <p className="text-secondary">No approved students</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-dark table-hover">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Roll</th>
+                  <th>Event</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {approvedList.map((app, i) => (
+                  <tr key={i}>
+                    <td>{app.user.name}</td>
+                    <td>{app.user.roll || "N/A"}</td>
+                    <td>{app.eventName}</td>
+                    <td>{new Date(app.eventDate).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
+
     </div>
   );
 };
