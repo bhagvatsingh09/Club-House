@@ -7,7 +7,11 @@ const gallerySchema = new mongoose.Schema({
   title: { type: String, required: true },
   type: { type: String, enum: ['image', 'video'], required: true },
   url: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  isFeatured: {
+  type: Boolean,
+  default: false
+}
 });
 
 module.exports = mongoose.model('Gallery', gallerySchema);

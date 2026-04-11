@@ -181,4 +181,9 @@
     right: 0;
     border-right-color: var(--border);
   }
+
+  .gallery-img:hover {
+  transform: scale(1.05);
+  transition: 0.3s;
+}
 }

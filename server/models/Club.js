@@ -20,9 +20,9 @@ const ClubSchema = new mongoose.Schema({
   },
 
   headCoordinator: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  },
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User"
+},
 
   banner: {
     type: String,
@@ -39,15 +39,26 @@ const ClubSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+
+  members: 
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+
+    events: 
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Event'
+    },
+    
 image: {
   type: String,
   default: "https://via.placeholder.com/300x200"
-}
-  
+}}, 
 
-  
 
-}, { timestamps: true });
+{ timestamps: true });
 
 
 module.exports = mongoose.model("Club", ClubSchema);

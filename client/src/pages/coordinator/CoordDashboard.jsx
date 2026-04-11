@@ -7,10 +7,11 @@ import { useNavigate } from "react-router-dom";
 
 
 const FacultyDashboard = () => {
-  
+
   const navigate = useNavigate();
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
+  
 
   const [clubName, setClubName] = useState("");
   const [stats, setStats] = useState({
@@ -73,7 +74,7 @@ const FacultyDashboard = () => {
               </span>
               Welcome back, {user?.name}
             </p>
-           
+
           </div>
 
           {/* <div className="bg-dark p-1 mt-3 mt-md-0 rounded-pill border border-secondary">
@@ -113,12 +114,14 @@ const FacultyDashboard = () => {
             <StatCard title="Total Events" value={stats.events} icon="📅" />
             <StatCard title="Gallery Items" value={stats.gallery} icon="📸" />
             <StatCard title="Pending Req." value={stats.pendingApprovals} icon="⏳" />
+            {/* <StatCard title="AssingTask" value={stats.AssingTask} icon="⏳" /> */}
 
             <div className="col-12 mt-4">
 
               <h4 className="text-white fw-bold mb-4">
                 Event Control Center
               </h4>
+             
 
               <AnnounceEvent clubId={user?.clubId} />
 
@@ -164,7 +167,7 @@ const StatCard = ({ title, value, icon }) => (
 
         <div className="fs-4">
           {icon}
-          
+
         </div>
 
       </div>

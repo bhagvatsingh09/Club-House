@@ -6,6 +6,8 @@ const EventSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   time: { type: String },
   location: { type: String, required: true },
+  
+  
 
   participationType: {
     type: String,
@@ -31,6 +33,12 @@ const EventSchema = new mongoose.Schema({
     department: String
   }
 ],
+volunteers: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+],
 
   groupRegistrations: [
     {
@@ -39,7 +47,19 @@ const EventSchema = new mongoose.Schema({
     }
   ],
 
-  capacity: { type: Number, default: 100 }
+  capacity: { type: Number, default: 100 },
+  volunteers: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }
+],
+participants: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }
+]
 
   
 

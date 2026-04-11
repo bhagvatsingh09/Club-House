@@ -23,6 +23,12 @@ import StudentApprovals from "./pages/admin/StudentApprovals";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminLogin from './pages/admin/AdminLogin';
 import EventRegister from "./pages/user/EventRegister";
+import FacultyList from "./pages/admin/FacultyList";
+import VolunteerList from './pages/admin/VolunteerList';
+import AdminEvents from "./pages//admin/AdminEvents";
+import FacultyTasks from "./pages/coordinator/FacultyTasks";
+import TotalRegistration from "./pages/admin/TotalRegistration";
+
 
 
 
@@ -44,6 +50,8 @@ function App() {
           <Route path="events" element={<MyEvents />} />
           <Route path='profile' element={<Profile />} />
           <Route path="event-register/:eventId" element={<EventRegister />} />
+          
+
 
         </Route>
 
@@ -55,21 +63,25 @@ function App() {
           <Route path="approvals" element={<EventApprovals />} />
           <Route path="members" element={<MemberManagement />} />
           <Route path="gallery" element={<GalleryManagement />} />
-          {/* Add other pages like Dashboard or Gallery here */}
+        
+             <Route path="tasks" element={<FacultyTasks />} />
+                   {/* Add other pages like Dashboard or Gallery here */}
         </Route>
 
         {/* Admin Routes */}
         <Route path='/admin/login' element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
-
           <Route index element={<Navigate to="/admin/dashboard" />} />
-
+          <Route path="faculty" element={<FacultyList />} />
+          <Route path="/admin/events" element={<AdminEvents />} />
           <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/registrations" element={<TotalRegistration />} />
 
           {/* Approved Students Page */}
           <Route path="approved-students" element={<StudentApprovals />} />
 
           <Route path="clubs" element={<ManageClubs />} />
+          <Route path="volunteers" element={<VolunteerList />} />
 
           <Route path="tasks" element={<AssignTasks />} />
 
@@ -79,7 +91,7 @@ function App() {
 
           <Route path="/admin/students" element={<AdminStudents />} />
 
-          
+
         </Route>
       </Routes>
     </Router>

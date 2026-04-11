@@ -16,12 +16,24 @@ router.get('/:userId', async (req, res) => {
 // PUT: Update User Profile (Bio, Name, etc.)
 router.put('/:userId/update', async (req, res) => {
   try {
-    const { name, bio, branch, rollNo, photo } = req.body;
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.userId,
-      { $set: { name, bio, branch, rollNo, photo } },
-      { new: true }
-    ).select('-password');
+    const { name, bio, department, studentId, year, phone, designation, photo } = req.body;
+
+const updatedUser = await User.findByIdAndUpdate(
+  req.params.userId,
+  {
+    $set: {
+      name,
+      bio,
+      department,
+      studentId,
+      year,
+      phone,
+      designation,
+      photo
+    }
+  },
+  { new: true }
+).select('-password');
 
     res.json({ message: "Profile updated successfully", user: updatedUser });
   } catch (err) {
@@ -71,4 +83,17 @@ router.get('/:userId/registrations', async (req, res) => {
   }
 });
 
+router.get('/', async (req, res) => {
+  try {
+    const { role } = req.query;
+
+    const filter = role ? { role } : {};
+
+    const users = await User.find(filter).select('-password');
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching users" });
+  }
+});
 module.exports = router;

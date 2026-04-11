@@ -11,13 +11,16 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     name: '',
     bio: '',
-    branch: '',
-    rollNo: '',
+    department: '',
+    studentId: '',
+    year: '',
+    phone: '',
+    designation: '',
     photo: ''
   });
 
   const storedUser = JSON.parse(localStorage.getItem('user'));
-  const userId = storedUser?._id || storedUser?.id;
+  const userId = storedUser?.id || storedUser?.id;
 
   const departments = [
     "Computer Science", "Information Technology", "Electronics",
@@ -34,10 +37,13 @@ const Profile = () => {
       setProfile(res.data);
 
       setFormData({
-        name: res.data.name,
+        name: res.data.name || '',
         bio: res.data.bio || '',
-        branch: res.data.branch || '',
-        rollNo: res.data.rollNo || '',
+        department: res.data.department || '',
+        studentId: res.data.studentId || '',
+        year: res.data.year || '',
+        phone: res.data.phone || '',
+        designation: res.data.designation || '',
         photo: res.data.photo || ''
       });
 
@@ -86,13 +92,14 @@ const Profile = () => {
             src={formData.photo || `https://ui-avatars.com/api/?name=${profile.name}`}
             className="rounded-circle border border-info"
             style={{ width: "90px", height: "90px", objectFit: "cover" }}
+            alt="profile"
           />
 
           <div>
             <h3 className="text-info">{profile.name}</h3>
             <p className="text-light mb-1">{profile.email}</p>
             <p className="text-secondary mb-0">
-              🎓 {profile.branch || "No branch"} | 🆔 {profile.rollNo || "N/A"}
+              🎓 {profile.department || "N/A"} | 🆔 {profile.studentId || "N/A"} | 📅 {profile.year || "N/A"}
             </p>
           </div>
 
@@ -146,9 +153,25 @@ const Profile = () => {
 
                 <input
                   className="form-control mb-2 bg-dark text-white border-secondary"
-                  value={formData.rollNo}
-                  onChange={(e) => setFormData({...formData, rollNo: e.target.value})}
-                  placeholder="Roll Number / Enrollment No"
+                  value={formData.studentId}
+                  onChange={(e) => setFormData({...formData, studentId: e.target.value})}
+                  placeholder="Student ID"
+                />
+
+                <select
+                  className="form-select bg-dark text-white border-secondary mb-2"
+                  value={formData.department}
+                  onChange={(e) => setFormData({...formData, department: e.target.value})}
+                >
+                  <option value="">Select Department</option>
+                  {departments.map(d => <option key={d}>{d}</option>)}
+                </select>
+
+                <input
+                  className="form-control mb-2 bg-dark text-white border-secondary"
+                  value={formData.year}
+                  onChange={(e) => setFormData({...formData, year: e.target.value})}
+                  placeholder="Year"
                 />
 
                 <textarea
@@ -158,16 +181,6 @@ const Profile = () => {
                   placeholder="Bio"
                 />
 
-                <select
-                  className="form-select bg-dark text-white border-secondary mb-2"
-                  value={formData.branch}
-                  onChange={(e) => setFormData({...formData, branch: e.target.value})}
-                >
-                  <option>Select Branch</option>
-                  {departments.map(d => <option key={d}>{d}</option>)}
-                </select>
-
-                {/* IMAGE UPLOAD */}
                 <input
                   type="file"
                   className="form-control mb-2 bg-dark text-white border-secondary"
@@ -176,8 +189,9 @@ const Profile = () => {
               </>
             ) : (
               <>
-                <p><span className="text-secondary">Branch:</span> <span className="text-light">{profile.branch || "N/A"}</span></p>
-                <p><span className="text-secondary">Roll No:</span> <span className="text-light">{profile.rollNo || "N/A"}</span></p>
+                <p><span className="text-secondary">Department:</span> <span className="text-light">{profile.department || "N/A"}</span></p>
+                <p><span className="text-secondary">Student ID:</span> <span className="text-light">{profile.studentId || "N/A"}</span></p>
+                <p><span className="text-secondary">Year:</span> <span className="text-light">{profile.year || "N/A"}</span></p>
                 <p><span className="text-secondary">Bio:</span> <span className="text-light">{profile.bio || "No bio"}</span></p>
               </>
             )}
@@ -195,7 +209,6 @@ const Profile = () => {
         {/* RIGHT SIDE */}
         <div className="col-lg-8">
 
-          {/* EVENTS */}
           <div className="card bg-dark border-secondary p-3 mb-4">
             <h5 className="text-info mb-3">My Events</h5>
 
@@ -204,13 +217,10 @@ const Profile = () => {
             ) : (
               registrations.map(reg => (
                 <div key={reg._id} className="border-bottom pb-2 mb-2">
-
                   <h6 className="text-light">{reg.eventId?.title}</h6>
-
                   <p className="text-secondary small mb-1">
                     📍 {reg.clubId?.name}
                   </p>
-
                   <span className={`badge ${
                     reg.status === "approved"
                       ? "bg-success"
@@ -218,7 +228,6 @@ const Profile = () => {
                   }`}>
                     {reg.status}
                   </span>
-
                 </div>
               ))
             )}

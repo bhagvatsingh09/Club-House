@@ -5,10 +5,11 @@ const CoordLayout = () => {
   const location = useLocation();
   const menuItems = [
     { name: 'Dashboard', path: '/coord/dashboard', icon: '📊' },
-    { name: 'Announce Event', path: '/coord/announce', icon: '📢' },
+    { name: 'Event Management', path: '/coord/announce', icon: '📢' },
     { name: 'Member Management', path: '/coord/members', icon: '👥' },
     { name: 'Event Approvals', path: '/coord/approvals', icon: '✅' },
     { name: 'Club Gallery', path: '/coord/gallery', icon: '🖼️' },
+    { name: 'Tasks', path: '/coord/tasks', icon: '📋' }
   ];
 
   return (

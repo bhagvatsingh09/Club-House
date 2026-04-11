@@ -86,6 +86,13 @@ const AdminDashboard = () => {
     if (label === "Total Students") {
       navigate("/admin/students");
     }
+    if (label === "Active Clubs"){
+      navigate('/admin/clubs');
+    }
+    if (label === "Total Events")
+       navigate("/admin/events");
+    // if (label === "Total Registrations") 
+    //   navigate("/admin/registrations");
   };
 
   if (loading) {
@@ -137,14 +144,58 @@ const AdminDashboard = () => {
       </div>
 
       {/* Approved Students Button */}
-      <div className="mt-4">
-        <button
-          className="btn btn-info"
-          onClick={() => navigate("/admin/approved-students")}
-        >
-          View Approved Students
+      {/* MANAGEMENT CARDS */}
+<div className="row g-4 mt-3">
+
+  {/* FACULTY CARD */}
+  <div className="col-md-6">
+    <div
+      className="card p-4 border-0 shadow-lg h-100"
+      style={{ backgroundColor: "#050a18", border: "1px solid #1a203c", cursor: "pointer" }}
+      onClick={() => navigate("/admin/faculty")}
+    >
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5 className="text-info fw-bold m-0">Faculty Coordinators</h5>
+        <span className="fs-3">👨‍🏫</span>
+      </div>
+
+      <p className="text-secondary small">
+        View, update and manage all faculty coordinators across clubs.
+      </p>
+
+      <div className="mt-auto">
+        <button className="btn btn-outline-info rounded-pill px-4">
+          Manage Faculty →
         </button>
       </div>
+    </div>
+  </div>
+
+  {/* VOLUNTEER CARD */}
+  <div className="col-md-6">
+    <div
+      className="card p-4 border-0 shadow-lg h-100"
+      style={{ backgroundColor: "#050a18", border: "1px solid #1a203c", cursor: "pointer" }}
+      onClick={() => navigate("/admin/volunteers")}
+    >
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5 className="text-success fw-bold m-0">Club Volunteers</h5>
+        <span className="fs-3">🙋‍♂️</span>
+      </div>
+
+      <p className="text-secondary small">
+        Monitor all assigned volunteers and their event participation.
+      </p>
+
+      <div className="mt-auto">
+        <button className="btn btn-outline-success rounded-pill px-4">
+          View Volunteers →
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
 
       
     </div>

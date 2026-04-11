@@ -8,6 +8,9 @@ const Media = require('../models/Media');
 const Event = require('../models/Event');
 const Registration = require('../models/Registration');
 const Galleries = require('../models/Gallery');
+const Log = require("../models/Log");
+
+
 
 router.get("/students", async (req, res) => {
   try {
@@ -83,7 +86,7 @@ router.get('/all-clubs', async (req, res) => {
 // ============================
 // GET ALL FACULTIES
 // ============================
-router.get('/faculties', async (req, res) => {
+router.get('/faculty-coordinators', async (req, res) => {
   try {
 
     const faculties = await User.find({ role: 'Faculty' })
@@ -106,6 +109,36 @@ router.get('/faculties', async (req, res) => {
   }
 });
 
+// GET ALL VOLUNTEERS
+// GET ALL VOLUNTEERS WITH EVENTS + CLUB
+router.get("/volunteers", async (req, res) => {
+  try {
+    const volunteers = await User.find({
+      clubRole: "Volunteer"   // ✅ FIXED
+    })
+      .populate("clubId", "name");
+
+    const Event = require("../models/Event");
+
+    const volunteersWithEvents = await Promise.all(
+      volunteers.map(async (v) => {
+        const events = await Event.find({
+          volunteers: v._id
+        }).select("title");
+
+        return {
+          ...v.toObject(),
+          assignedEvents: events || []
+        };
+      })
+    );
+
+    res.json(volunteersWithEvents);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
 
 // ============================
 // ASSIGN FACULTY HEAD
@@ -191,32 +224,70 @@ router.put('/remove-head/:clubId', async (req, res) => {
   }
 });
 
+// REMOVE VOLUNTEER FROM SYSTEM
+router.delete("/volunteer/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const Event = require("../models/Event");
+
+    // remove from all events
+    await Event.updateMany(
+      { volunteers: userId },
+      { $pull: { volunteers: userId } }
+    );
+
+    // ✅ CHANGE ROLE
+    await User.findByIdAndUpdate(userId, {
+      clubRole: "Member"
+    });
+
+    res.json({ message: "Volunteer removed successfully" });
+
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// make member to volunteer
+// ====================
+router.post("/make-volunteer/:id", async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.params.id, {
+      isVolunteer: true
+    });
+
+    res.json({ message: "User promoted to volunteer" });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
+});
 
 // ============================
 // ISSUE TASK
 // ============================
 router.post('/issue-task', async (req, res) => {
   try {
-
     const { clubId, directive, deadline, priority } = req.body;
 
+    const responses = clubId.map(id => ({
+      club: id,
+      status: 'Pending'
+    }));
+
     const newTask = new Task({
-      club: clubId,
+      clubs: clubId,
       directive,
       deadline,
-      priority
+      priority,
+      responses
     });
 
     await newTask.save();
 
-    res.status(201).json(newTask);
-
+    res.json(newTask);
   } catch (err) {
-
-    res.status(500).json({
-      message: "Failed to issue task"
-    });
-
+    res.status(500).json({ message: "Failed" });
   }
 });
 
@@ -226,17 +297,14 @@ router.post('/issue-task', async (req, res) => {
 // ============================
 router.get('/all-tasks', async (req, res) => {
   try {
-
     const tasks = await Task.find()
-      .populate('club', 'name')
+      .populate('clubs', 'name')   // ✅ FIX
       .sort({ createdAt: -1 });
 
     res.json(tasks);
-
   } catch (err) {
-
+    console.error(err);   
     res.status(500).json({ message: err.message });
-
   }
 });
 
@@ -260,6 +328,61 @@ router.delete('/delete-task/:id', async (req, res) => {
   }
 });
 
+// ============================
+// GET TASKS FOR FACULTY (BY CLUB)
+// ============================
+router.get('/faculty/tasks/:clubId', async (req, res) => {
+  try {
+    const tasks = await Task.find({
+      clubs: req.params.clubId
+    })
+    .populate('clubs', 'name');
+
+    res.json(tasks);
+  } catch (err) {
+    console.error(err);   // 👈 VERY IMPORTANT
+    res.status(500).json({ message: err.message });
+  }
+});
+// =====================
+// accept or reject task
+// =====================
+router.put('/faculty/task-response', async (req, res) => {
+  try {
+    const { taskId, clubId, status, reason } = req.body;
+
+    console.log("DATA:", { taskId, clubId, status, reason });
+
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    if (!task.responses || task.responses.length === 0) {
+      return res.status(400).json({ message: "No responses in task" });
+    }
+
+    const response = task.responses.find(r => {
+      return String(r.club) === String(clubId);   // ✅ SAFE COMPARISON
+    });
+
+    if (!response) {
+      return res.status(404).json({ message: "Response not found for this club" });
+    }
+
+    response.status = status;
+    response.reason = reason || "";
+
+    await task.save();
+
+    res.json({ message: "Updated successfully" });
+
+  } catch (err) {
+    console.error("🔥 RESPONSE ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // ============================
 // ADMIN: GALLERY OVERVIEW
@@ -291,6 +414,18 @@ router.get('/gallery/overview', async (req, res) => {
   } catch (err) {
     console.error("Overview error:", err);
     res.status(500).json({ message: "Failed to load overview" });
+  }
+});
+
+// get gallary media for landing page
+router.get('/gallery/featured', async (req, res) => {
+  console.log("🔥 FEATURED ROUTE HIT");
+
+  try {
+    const media = await Galleries.find({ isFeatured: true });
+    res.json(media);
+  } catch (err) {
+    res.status(500).json({ message: "Failed" });
   }
 });
 
@@ -407,6 +542,118 @@ router.get("/approved-students", async (req, res) => {
 });
 
 
+// routes/adminRoutes.js
 
+
+router.get("/logs", async (req, res) => {
+  try {
+    const logs = await Log.find().sort({ createdAt: -1 });
+    res.json(logs);
+  } catch (err) {
+    console.error("LOG FETCH ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch logs" });
+  }
+});
+
+// get club details
+
+router.get("/club-details/:clubId", async (req, res) => {
+  try {
+    
+    const clubId = req.params.clubId;
+
+  
+    // ✅ GET CLUB
+   const club = await Club.findById(clubId)
+  .populate('headCoordinator', 'name email');
+
+
+    // ✅ GET MEMBERS (IMPORTANT FIX)
+    const members = await User.find({
+      joinedClubs: clubId,
+      role: "Student"
+    }).select("name email roll clubRole");
+
+    // ✅ GET EVENTS
+    const events = await Event.find({ club: clubId })
+      .select("title date");
+
+    res.json({
+      ...club.toObject(),
+      members,
+      events
+    });
+
+  } catch (err) {
+    console.error("Club details error:", err);
+    res.status(500).json({ message: "Failed to fetch club details" });
+  }
+});
+
+// delete club
+router.delete('/delete-club/:id', async (req, res) => {
+  try {
+    const club = await Club.findByIdAndDelete(req.params.id);
+
+    if (!club) {
+      return res.status(404).json({ message: "Club not found" });
+    }
+
+    res.json({ message: "Club deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// update club
+router.put('/update-club/:id', async (req, res) => {
+  try {
+    const club = await Club.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    res.json(club);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Update failed" });
+  }
+});
+
+// get all events
+router.get("/all-events", async (req, res) => {
+  try {
+    const events = await Event.find({})
+      .populate("participants", "name email")
+      .populate('club', 'name')
+      .sort({ date: 1 });
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch events" });
+  }
+});
+
+// ⭐ TOGGLE FEATURED (LIKE)
+router.put('/gallery/feature/:id', async (req, res) => {
+  try {
+    const media = await Galleries.findById(req.params.id);
+
+    if (!media) {
+      return res.status(404).json({ message: "Media not found" });
+    }
+
+    // toggle true/false
+    media.isFeatured = !media.isFeatured;
+    await media.save();
+
+    res.json(media);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to update" });
+  }
+});
 
 module.exports = router;

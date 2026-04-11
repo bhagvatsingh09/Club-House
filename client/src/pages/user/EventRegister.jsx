@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import API from "../../api/axios";
 import { toast } from "react-hot-toast";
@@ -9,97 +9,146 @@ const EventRegister = () => {
   const navigate = useNavigate();
 
   const [event, setEvent] = useState(state?.event || null);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    roll: "",
-    department: ""
-  });
+  const [registered, setRegistered] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
-  const userId = user?._id;
+  const userId = user?.id;
 
-  // 🔥 FETCH EVENT IF PAGE REFRESH
   useEffect(() => {
-    if (!event) {
-      const fetchEvent = async () => {
-        try {
+    const fetchEvent = async () => {
+      try {
+        if (!event) {
           const res = await API.get(`/events?eventId=${eventId}`);
-          setEvent(res.data[0]); // assuming array
-        } catch {
-          toast.error("Failed to load event");
+          setEvent(res.data[0]);
         }
-      };
-      fetchEvent();
-    }
-  }, [event, eventId]);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+        const regRes = await API.get(`/users/${userId}/registrations`);
+        const exists = regRes.data.some(r => r._id === eventId);
+        setRegistered(exists);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+      } catch {
+        toast.error("Error loading data");
+      }
+    };
 
-    if (!userId) {
-      return toast.error("Login required");
-    }
+    if (userId) fetchEvent();
+  }, [eventId]);
 
+  const handleRegister = async () => {
+    setLoading(true);
     try {
       const res = await API.post(`/events/${eventId}/register`, {
         userId,
-        extraDetails: formData
+        extraDetails: {
+          name: user.name,
+          studentId: user.studentId,
+          department: user.department,
+          year: user.year
+        }
       });
 
       toast.success(res.data.message);
-      navigate(-1);
+      setRegistered(true);
 
     } catch (err) {
-      console.error(err); // 🔥 DEBUG
-      toast.error(err.response?.data?.message || "Failed");
+      toast.error(err.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="container mt-4 text-white">
+    <div className="container py-4 text-white">
 
-      <h3>{event?.title || "Loading..."}</h3>
-      <p>{event?.description}</p>
+      {/* HERO */}
+      <div className="card bg-dark border-secondary p-4 mb-4 shadow-lg rounded-4">
+        <h2 className="fw-bold text-info">{event?.title || "Loading..."}</h2>
+        <p className="text-light opacity-75">{event?.description}</p>
 
-      <form onSubmit={handleSubmit} className="card bg-dark p-3">
+        <div className="d-flex flex-wrap gap-2 mt-2">
+          <span className="badge bg-secondary">📅 {event?.date || "TBA"}</span>
+          <span className="badge bg-secondary">📍 {event?.mode || "Offline"}</span>
+          <span className="badge bg-secondary">🏆 {event?.type || "Competition"}</span>
+        </div>
+      </div>
 
-        <input
-          name="name"
-          placeholder="Name"
-          className="form-control mb-2"
-          onChange={handleChange}
-          required
-        />
+      <div className="row">
 
-        <input
-          name="roll"
-          placeholder="Roll Number"
-          className="form-control mb-2"
-          onChange={handleChange}
-          required
-        />
+        {/* USER CARD */}
+        <div className="col-md-5 mb-4">
+          <div className="card bg-dark border-secondary p-4 rounded-4 shadow h-100">
 
-        <input
-          name="department"
-          placeholder="Department"
-          className="form-control mb-2"
-          onChange={handleChange}
-          required
-        />
+            <div className="text-center mb-3">
+              <img
+                src={`https://ui-avatars.com/api/?name=${user?.name}`}
+                className="rounded-circle border border-info mb-2"
+                style={{ width: "85px", height: "85px" }}
+                alt="avatar"
+              />
+              <h5 className="text-info fw-bold">{user?.name}</h5>
+              <p className="text-light small">{user?.email}</p>
+            </div>
 
-        <button className="btn btn-success mt-2">
-          Submit & Register
-        </button>
+            <hr className="border-secondary" />
 
-      </form>
+            <div className="small">
+              <p><span className="text-secondary">🎓 ID:</span> <span className="text-light">{user?.studentId || "N/A"}</span></p>
+              <p><span className="text-secondary">🏫 Dept:</span> <span className="text-light">{user?.department || "N/A"}</span></p>
+              <p><span className="text-secondary">📅 Year:</span> <span className="text-light">{user?.year || "N/A"}</span></p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* CTA CARD */}
+        <div className="col-md-7">
+          <div className="card bg-dark border-secondary p-5 rounded-4 shadow h-100 d-flex flex-column justify-content-between">
+
+            {/* TOP INFO */}
+            <div>
+              <h4 className="text-info fw-bold mb-3">🚀 Confirm Registration</h4>
+
+              <p className="text-light mb-3">
+                You are about to register for this event. Your profile details will be used automatically.
+              </p>
+
+              {/* EXTRA DETAILS */}
+              <div className="bg-black bg-opacity-25 rounded-3 p-3 mb-3">
+                <p className="mb-1 text-secondary small">📌 Important Info</p>
+                <ul className="small text-light mb-0">
+                  <li>No changes allowed after registration</li>
+                  <li>Bring college ID on event day</li>
+                  <li>Check email for updates</li>
+                </ul>
+              </div>
+
+              {registered && (
+                <div className="alert alert-success border-0">
+                  ✅ You are already registered
+                </div>
+              )}
+            </div>
+
+            {/* BUTTON */}
+            <button
+              className={`btn w-100 py-3 fw-bold rounded-pill ${
+                registered ? "btn-secondary" : "btn-success"
+              }`}
+              onClick={handleRegister}
+              disabled={registered || loading}
+            >
+              {registered
+                ? "Already Registered"
+                : loading
+                ? "Registering..."
+                : "Confirm & Register"}
+            </button>
+
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 };

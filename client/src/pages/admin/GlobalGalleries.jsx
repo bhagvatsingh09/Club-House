@@ -8,6 +8,7 @@ const GlobalGalleries = () => {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [previewItem, setPreviewItem] = useState(null);
+  const [likedId, setLikedId] = useState(null);
 
   const serverUrl = "http://localhost:5000";
 
@@ -15,7 +16,6 @@ const GlobalGalleries = () => {
     setLoading(true);
     try {
       const res = await API.get('/admin/gallery/overview');
-      // console.log(res.data)
       setClubs(res.data);
     } catch (err) {
       console.error(err);
@@ -27,7 +27,6 @@ const GlobalGalleries = () => {
     setLoading(true);
     try {
       const res = await API.get(`/admin/gallery/${club._id}`);
-      // console.log(res.data)
       setMedia(res.data);
       setSelectedClub(club);
     } catch (err) {
@@ -54,6 +53,43 @@ const GlobalGalleries = () => {
   const filteredMedia =
     filter === "all" ? media : media.filter(m => m.type === filter);
 
+  const handleFeature = async (id) => {
+    try {
+      const res = await API.put(`/admin/gallery/feature/${id}`);
+
+      setMedia(prev =>
+        prev.map(item =>
+          item._id === id ? res.data : item
+        )
+      );
+
+    } catch (err) {
+      console.error("Feature update failed", err);
+    }
+  };
+
+  const handleDoubleClick = async (item) => {
+    // only like if not already featured
+    if (item.isFeatured) return;
+
+  setLikedId(item._id);
+
+  setTimeout(() => setLikedId(null), 800);
+
+    try {
+      const res = await API.put(`/admin/gallery/feature/${item._id}`);
+
+      setMedia(prev =>
+        prev.map(m =>
+          m._id === item._id ? res.data : m
+        )
+      );
+
+    } catch (err) {
+      console.error("Double click like failed", err);
+    }
+  };
+
   return (
     <div className="container-fluid">
 
@@ -70,81 +106,150 @@ const GlobalGalleries = () => {
         </div>
       ) : (
         <>
-          {/* ================= CLUB LIST ================= */}
+          {/* CLUB LIST */}
           {!selectedClub && (
             <div className="row g-4">
               {clubs.map(club => (
                 <div className="col-md-4 col-lg-3" key={club._id}>
                   <div
-                    className="card bg-dark text-white border-0 shadow"
+                    className="card border-0 rounded-4 overflow-hidden shadow"
                     onClick={() => fetchClubMedia(club)}
-                    style={{ cursor: "pointer" }}
+                    style={{
+                      cursor: "pointer",
+                      backgroundColor: "#0b1228"
+                    }}
                   >
-
-                    {/* 🔥 BANNER */}
                     <img
                       src={
                         club.banner
                           ? `${serverUrl}${club.banner}`
                           : "https://via.placeholder.com/400x200"
                       }
-                      style={{ height: "180px", objectFit: "cover" }}
+                      style={{
+                        height: "160px",
+                        objectFit: "cover"
+                      }}
                     />
 
                     <div className="p-3">
-                      <h6>{club.name}</h6>
-                      <small className="text-secondary">
-                        🖼 {club.imageCount} | 🎥 {club.videoCount}
-                      </small>
-                    </div>
+                      <h6 className="text-white">{club.name}</h6>
 
+                      <div className="d-flex justify-content-between text-secondary small">
+                        <span>🖼 {club.imageCount}</span>
+                        <span>🎥 {club.videoCount}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* ================= MEDIA VIEW ================= */}
+          {/* MEDIA VIEW */}
           {selectedClub && (
             <>
-              {/* FILTER */}
-              <div className="mb-3">
-                <button onClick={() => setFilter("all")} className="btn btn-sm btn-info me-2">All</button>
-                <button onClick={() => setFilter("image")} className="btn btn-sm btn-outline-info me-2">Images</button>
-                <button onClick={() => setFilter("video")} className="btn btn-sm btn-outline-info">Videos</button>
-                <button className="btn btn-sm btn-secondary ms-3" onClick={() => setSelectedClub(null)}>Back</button>
+              {/* FILTER BAR */}
+              <div className="mb-4 d-flex align-items-center gap-2">
+                <button
+                  onClick={() => setFilter("all")}
+                  className={`btn btn-sm ${filter === "all" ? "btn-info" : "btn-outline-info"}`}
+                >
+                  All
+                </button>
+
+                <button
+                  onClick={() => setFilter("image")}
+                  className={`btn btn-sm ${filter === "image" ? "btn-info" : "btn-outline-info"}`}
+                >
+                  Images
+                </button>
+
+                <button
+                  onClick={() => setFilter("video")}
+                  className={`btn btn-sm ${filter === "video" ? "btn-info" : "btn-outline-info"}`}
+                >
+                  Videos
+                </button>
+
+                <button
+                  className="btn btn-sm btn-secondary ms-auto"
+                  onClick={() => setSelectedClub(null)}
+                >
+                  ← Back
+                </button>
+
               </div>
 
-              <div className="row g-3">
+              <div className="row g-1">
                 {filteredMedia.map(item => (
-                  <div className="col-md-4 col-lg-3" key={item._id}>
-                    <div className="card bg-dark border-0 text-white">
+                  <div className="col-4 col-md-3 col-lg-2" key={item._id}>
+                    <div className="position-relative">
 
                       {/* MEDIA */}
                       {item.type === "image" ? (
                         <img
                           src={`${serverUrl}${item.url}`}
                           className="w-100"
-                          style={{ height: "180px", objectFit: "cover" }}
-                          onClick={() => setPreviewItem(item)}
+                          onDoubleClick={() => handleDoubleClick(item)}
+                          style={{
+                            height: "200px",
+                            objectFit: "cover",
+                            borderRadius: "10px"
+                          }}
                         />
                       ) : (
                         <video
                           src={`${serverUrl}${item.url}`}
                           className="w-100"
-                          style={{ height: "180px", objectFit: "cover" }}
-                          onClick={() => setPreviewItem(item)}
+                          onDoubleClick={() => handleDoubleClick(item)}
+                          style={{
+                            height: "200px",
+                            objectFit: "cover",
+                            borderRadius: "10px"
+                          }}
                         />
                       )}
 
-                      <div className="p-2">
-                        <small>{item.title}</small>
-                        <button
-                          className="btn btn-sm btn-danger float-end"
-                          onClick={() => handleDelete(item._id)}
+                      {/* ACTION BUTTONS (TOP RIGHT) */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "10px",
+                          right: "10px",
+                          display: "flex",
+                          gap: "8px"
+                        }}
+                      >
+
+                        {/* ❤️ LIKE */}
+                        <span
+                          onClick={() => handleFeature(item._id)}
+                          style={{
+                            fontSize: "20px",
+                            cursor: "pointer",
+                            background: "rgba(0,0,0,0.6)",
+                            borderRadius: "50%",
+                            padding: "5px 8px"
+                          }}
                         >
-                          Delete
-                        </button>
+                          {item.isFeatured ? "❤️" : "🤍"}
+                        </span>
+
+                        {/* 🗑 DELETE */}
+                        <span
+                          onClick={() => handleDelete(item._id)}
+                          style={{
+                            fontSize: "18px",
+                            cursor: "pointer",
+                            background: "rgba(0,0,0,0.6)",
+                            borderRadius: "50%",
+                            padding: "5px 8px",
+                            color: "#ff4d4f"
+                          }}
+                        >
+                          🗑
+                        </span>
+
                       </div>
 
                     </div>
@@ -158,18 +263,40 @@ const GlobalGalleries = () => {
 
       {/* PREVIEW MODAL */}
       {previewItem && (
-        <div className="modal d-block" onClick={() => setPreviewItem(null)}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content bg-dark p-3">
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ background: "rgba(0,0,0,0.9)", zIndex: 999 }}
+          onClick={() => setPreviewItem(null)}
+        >
+          <div
+            style={{ maxWidth: "900px", width: "90%" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {previewItem.type === "image" ? (
+              <img
+                src={`${serverUrl}${previewItem.url}`}
+                className="w-100"
+                style={{ borderRadius: "10px" }}
+              />
+            ) : (
+              <video
+                src={`${serverUrl}${previewItem.url}`}
+                controls
+                autoPlay
+                className="w-100"
+                style={{ borderRadius: "10px" }}
+              />
+            )}
 
-              {previewItem.type === "image" ? (
-                <img src={`${serverUrl}${previewItem.url}`} className="w-100" />
-              ) : (
-                <video src={`${serverUrl}${previewItem.url}`} controls autoPlay className="w-100" />
-              )}
+            <div className="text-white mt-2 d-flex justify-content-between">
+              <span>{previewItem.title}</span>
 
-              <h5 className="text-white mt-2">{previewItem.title}</h5>
-
+              <button
+                className="btn btn-sm btn-danger"
+                onClick={() => handleDelete(previewItem._id)}
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

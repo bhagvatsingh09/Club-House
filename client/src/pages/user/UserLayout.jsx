@@ -5,6 +5,9 @@ import '../styles/Dashboard.css';
 const UserLayout = () => {
   const location = useLocation();
 
+  // 🔥 Get user from localStorage (or context if you use one)
+  const user = JSON.parse(localStorage.getItem("user"));
+
   const menuItems = [
     { name: 'Dashboard', path: '/user/dashboard', icon: '🏠' },
     { name: 'Explore Clubs', path: '/user/clubs', icon: '🔍' },
@@ -14,21 +17,42 @@ const UserLayout = () => {
 
   return (
     <div className="dashboard-wrapper landing-body">
+      
       {/* Sidebar */}
       <aside className="sidebar">
         <h4 className="text-info fw-bold mb-5 px-3">ClubHub</h4>
+        
         <nav>
           {menuItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`nav-link-custom ${location.pathname === item.path ? 'active' : ''}`}
+              className={`nav-link-custom ${
+                location.pathname.startsWith(item.path) ? 'active' : ''
+              }`}
             >
               {item.icon} <span className="ms-2">{item.name}</span>
             </Link>
           ))}
+
+          {/* ✅ Volunteer Dashboard (ONLY IF VOLUNTEER) */}
+          {user?.isVolunteer && (
+            <Link
+              to="/user/volunteer-dashboard"
+              className={`nav-link-custom ${
+                location.pathname.startsWith('/user/volunteer-dashboard') ? 'active' : ''
+              }`}
+            >
+              🧑‍💼 <span className="ms-2">Volunteer Dashboard</span>
+            </Link>
+          )}
+          
           <hr className="text-secondary opacity-25 mt-4" />
-          <Link to="/" className="nav-link-custom text-danger">🚪 Logout</Link>
+
+          {/* Logout */}
+          <Link to="/" className="nav-link-custom text-danger">
+            🚪 Logout
+          </Link>
         </nav>
       </aside>
 
@@ -36,8 +60,13 @@ const UserLayout = () => {
       <main className="main-content">
         <header className="d-flex justify-content-end mb-4">
           <div className="d-flex align-items-center bg-dark p-2 px-3 rounded-pill border border-secondary">
-            <span className="text-white small me-2">Student Dashboard</span>
-            <div className="bg-primary rounded-circle" style={{width: '30px', height: '30px'}}></div>
+            <span className="text-white small me-2">
+              {user?.isVolunteer ? "Volunteer Panel" : "Student Dashboard"}
+            </span>
+            <div
+              className="bg-primary rounded-circle"
+              style={{ width: '30px', height: '30px' }}
+            ></div>
           </div>
         </header>
         

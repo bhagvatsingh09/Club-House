@@ -13,6 +13,7 @@ const path = require("path");
 router.get("/", async (req, res) => {
   try {
     const clubs = await Club.find({ status: "Active" });
+    
     res.json(clubs);
   } catch {
     res.status(500).json({ message: "Error fetching clubs" });
@@ -92,9 +93,9 @@ router.post("/students/join-club", async (req, res) => {
 // GET MEMBERS
 // ============================
 router.get("/:clubId/members", async (req, res) => {
-  try {
+  try { 
     const members = await User.find({
-      clubId: req.params.clubId,
+      joinedClubs : req.params.clubId,
       role: "Student"
     }).select("name email roll clubRole");
 
@@ -119,25 +120,50 @@ router.get('/notifications/:clubId', async (req, res) => {
   }
 });
 
+// PUT /club/update-role/:userId
+
+// PUT /club/update-role/:userId
+
 // ============================
 // UPDATE MEMBER ROLE
 // ============================
 router.put("/update-role/:userId", async (req, res) => {
   try {
     const { role } = req.body;
+    const { userId } = req.params;
+    const clubId = req.user?.clubId;
 
-    const user = await User.findByIdAndUpdate(
-      req.params.userId,
-      { clubRole: role },
-      { new: true }
-    );
+    console.log("Updating role:", { userId, role, clubId });
 
+    if (!role) {
+      return res.status(400).json({ message: "Role is required" });
+    }
+
+    const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.json({ message: "Role updated", user });
+    if (role === "Volunteer") {
+      if (user.volunteerClub && user.volunteerClub.toString() !== clubId) {
+        return res.status(400).json({
+          message: `User is already a volunteer in another club`
+        });
+      }
+      user.clubRole = "Volunteer";
+      user.volunteerClub = clubId;
+    }
+    else if (role === "Member") {
+      user.clubRole = "Member";
+      if (user.volunteerClub?.toString() === clubId) user.volunteerClub = null;
+    }
+    else {
+      return res.status(400).json({ message: "Invalid role value" });
+    }
 
+    await user.save();
+    return res.json({ message: "Role updated", user });
   } catch (err) {
-    res.status(500).json({ message: "Failed to update role" });
+    console.error("Error updating role:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
@@ -148,18 +174,16 @@ router.put("/remove-member/:userId", async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // Remove club relation
     user.clubId = null;
     user.clubRole = "Member";
+    user.volunteerClub = null;
 
     await user.save();
 
-    res.json({ message: "Member removed" });
+    res.json({ message: "Removed from club" });
 
   } catch (err) {
-    res.status(500).json({ message: "Failed to remove member" });
+    res.status(500).json({ message: "Error" });
   }
 });
 
@@ -207,5 +231,17 @@ router.post("/:clubId/upload-banner", upload.single("banner"), async (req, res) 
     res.status(500).json({ message: "Upload failed" });
   }
 });
+
+router.post('/create-club', async (req, res) => {
+  try {
+    const club = new Club(req.body);
+    await club.save();
+    res.status(201).json(club);
+  } catch (err) {
+    res.status(500).json({ message: "Error creating club" });
+  }
+});
+
+
 
 module.exports = router;

@@ -22,8 +22,8 @@ const EventApprovals = () => {
         API.get(`/events/club/${clubId}/approved`)
       ]);
 
-      setPendingList(pendingRes.data);
-      setApprovedList(approvedRes.data);
+      setPendingList(pendingRes.data || []);
+      setApprovedList(approvedRes.data || []);
 
     } catch (err) {
       console.error("Error fetching approvals:", err);
@@ -50,7 +50,7 @@ const EventApprovals = () => {
         await API.put(`/events/${eventId}/reject/${userId}`);
       }
 
-      fetchData(); // refresh both tabs
+      fetchData();
 
     } catch (err) {
       alert("Action failed");
@@ -72,7 +72,7 @@ const EventApprovals = () => {
 
       <h2 className="text-white mb-3">Event Approvals</h2>
 
-      {/* 🔥 TABS */}
+      {/* TABS */}
       <div className="mb-4">
         <button
           className={`btn me-2 ${activeTab === "pending" ? "btn-info text-dark" : "btn-outline-info"}`}
@@ -89,7 +89,7 @@ const EventApprovals = () => {
         </button>
       </div>
 
-      {/* ================= PENDING TAB ================= */}
+      {/* ================= PENDING ================= */}
       {activeTab === "pending" && (
         pendingList.length === 0 ? (
           <p className="text-secondary">No pending approvals</p>
@@ -99,7 +99,9 @@ const EventApprovals = () => {
               <thead>
                 <tr>
                   <th>Student</th>
-                  <th>Roll</th>
+                  <th>Student ID</th>
+                  <th>Department</th>
+                  <th>Year</th>
                   <th>Event</th>
                   <th>Date</th>
                   <th className="text-end">Actions</th>
@@ -108,8 +110,10 @@ const EventApprovals = () => {
               <tbody>
                 {pendingList.map((app, i) => (
                   <tr key={i}>
-                    <td>{app.user.name}</td>
-                    <td>{app.user.roll || "N/A"}</td>
+                    <td>{app.user?.name}</td>
+                    <td>{app.user?.studentId || "N/A"}</td>
+                    <td>{app.user?.department || "N/A"}</td>
+                    <td>{app.user?.year || "N/A"}</td>
                     <td>{app.eventName}</td>
                     <td>{new Date(app.eventDate).toLocaleDateString()}</td>
                     <td className="text-end">
@@ -120,6 +124,7 @@ const EventApprovals = () => {
                       >
                         Reject
                       </button>
+
                       <button
                         className="btn btn-info btn-sm text-dark"
                         onClick={() => handleAction(app.eventId, app.user._id, 'approve')}
@@ -136,7 +141,7 @@ const EventApprovals = () => {
         )
       )}
 
-      {/* ================= APPROVED TAB ================= */}
+      {/* ================= APPROVED ================= */}
       {activeTab === "approved" && (
         approvedList.length === 0 ? (
           <p className="text-secondary">No approved students</p>
@@ -146,7 +151,9 @@ const EventApprovals = () => {
               <thead>
                 <tr>
                   <th>Student</th>
-                  <th>Roll</th>
+                  <th>Student ID</th>
+                  <th>Department</th>
+                  <th>Year</th>
                   <th>Event</th>
                   <th>Date</th>
                 </tr>
@@ -154,8 +161,10 @@ const EventApprovals = () => {
               <tbody>
                 {approvedList.map((app, i) => (
                   <tr key={i}>
-                    <td>{app.user.name}</td>
-                    <td>{app.user.roll || "N/A"}</td>
+                    <td>{app.user?.name}</td>
+                    <td>{app.user?.studentId || "N/A"}</td>
+                    <td>{app.user?.department || "N/A"}</td>
+                    <td>{app.user?.year || "N/A"}</td>
                     <td>{app.eventName}</td>
                     <td>{new Date(app.eventDate).toLocaleDateString()}</td>
                   </tr>
