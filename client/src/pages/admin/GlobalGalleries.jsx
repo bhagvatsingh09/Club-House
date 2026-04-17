@@ -1,21 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import API from '../../api/axios';
+import React, { useState, useEffect } from "react";
+import API from "../../api/axios";
 
 const GlobalGalleries = () => {
   const [clubs, setClubs] = useState([]);
   const [selectedClub, setSelectedClub] = useState(null);
   const [media, setMedia] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [previewItem, setPreviewItem] = useState(null);
-  const [likedId, setLikedId] = useState(null);
 
   const serverUrl = "http://localhost:5000";
+
+  useEffect(() => {
+    fetchOverview();
+  }, []);
 
   const fetchOverview = async () => {
     setLoading(true);
     try {
-      const res = await API.get('/admin/gallery/overview');
+      const res = await API.get("/admin/gallery/overview");
       setClubs(res.data);
     } catch (err) {
       console.error(err);
@@ -35,108 +38,98 @@ const GlobalGalleries = () => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchOverview();
-  }, []);
-
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this asset?")) return;
 
     try {
       await API.delete(`/admin/gallery/media/${id}`);
-      setMedia(prev => prev.filter(m => m._id !== id));
+      setMedia((prev) => prev.filter((m) => m._id !== id));
     } catch {
       alert("Delete failed");
     }
   };
 
-  const filteredMedia =
-    filter === "all" ? media : media.filter(m => m.type === filter);
-
   const handleFeature = async (id) => {
     try {
       const res = await API.put(`/admin/gallery/feature/${id}`);
-
-      setMedia(prev =>
-        prev.map(item =>
-          item._id === id ? res.data : item
-        )
+      setMedia((prev) =>
+        prev.map((item) => (item._id === id ? res.data : item))
       );
-
     } catch (err) {
-      console.error("Feature update failed", err);
+      console.error(err);
     }
   };
 
-  const handleDoubleClick = async (item) => {
-    // only like if not already featured
-    if (item.isFeatured) return;
-
-  setLikedId(item._id);
-
-  setTimeout(() => setLikedId(null), 800);
-
-    try {
-      const res = await API.put(`/admin/gallery/feature/${item._id}`);
-
-      setMedia(prev =>
-        prev.map(m =>
-          m._id === item._id ? res.data : m
-        )
-      );
-
-    } catch (err) {
-      console.error("Double click like failed", err);
-    }
-  };
+  const filteredMedia =
+    filter === "all" ? media : media.filter((m) => m.type === filter);
 
   return (
-    <div className="container-fluid">
-
+    <div className="container-fluid px-4 py-4 bg-dark min-vh-100">
       {/* HEADER */}
-      <div className="mb-4">
-        <h2 className="text-white fw-bold">
-          {selectedClub ? selectedClub.name : "Global Galleries"}
-        </h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 className="text-white fw-bold mb-1">
+            {selectedClub ? selectedClub.name : "Global Galleries"}
+          </h2>
+          <small className="text-secondary">
+            Manage clubs media beautifully
+          </small>
+        </div>
+
+        {selectedClub && (
+          <button
+            className="btn btn-outline-light rounded-pill px-4"
+            onClick={() => setSelectedClub(null)}
+          >
+            ← Back
+          </button>
+        )}
       </div>
 
+      {/* LOADING */}
       {loading ? (
         <div className="text-center py-5">
           <div className="spinner-border text-info"></div>
         </div>
       ) : (
         <>
-          {/* CLUB LIST */}
+          {/* CLUB GRID */}
           {!selectedClub && (
             <div className="row g-4">
-              {clubs.map(club => (
-                <div className="col-md-4 col-lg-3" key={club._id}>
+              {clubs.map((club) => (
+                <div className="col-md-6 col-lg-4 col-xl-3" key={club._id}>
                   <div
-                    className="card border-0 rounded-4 overflow-hidden shadow"
                     onClick={() => fetchClubMedia(club)}
+                    className="card border-0 overflow-hidden shadow-lg rounded-4 h-100"
                     style={{
                       cursor: "pointer",
-                      backgroundColor: "#0b1228"
+                      background: "#111827",
+                      transition: "0.3s"
                     }}
                   >
                     <img
                       src={
                         club.banner
                           ? `${serverUrl}${club.banner}`
-                          : "https://via.placeholder.com/400x200"
+                          : "https://via.placeholder.com/400x220"
                       }
                       style={{
-                        height: "160px",
+                        height: "200px",
                         objectFit: "cover"
                       }}
                     />
 
                     <div className="p-3">
-                      <h6 className="text-white">{club.name}</h6>
+                      <h5 className="text-white fw-bold">{club.name}</h5>
 
-                      <div className="d-flex justify-content-between text-secondary small">
-                        <span>🖼 {club.imageCount}</span>
-                        <span>🎥 {club.videoCount}</span>
+                      <div className="d-flex justify-content-between mt-3">
+                        <span className="badge bg-primary rounded-pill px-3">
+                          🖼 {club.imageCount}
+                        </span>
+
+                        <span className="badge bg-danger rounded-pill px-3">
+                          🎥 {club.videoCount}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -145,113 +138,74 @@ const GlobalGalleries = () => {
             </div>
           )}
 
-          {/* MEDIA VIEW */}
+          {/* MEDIA GRID */}
           {selectedClub && (
             <>
-              {/* FILTER BAR */}
-              <div className="mb-4 d-flex align-items-center gap-2">
-                <button
-                  onClick={() => setFilter("all")}
-                  className={`btn btn-sm ${filter === "all" ? "btn-info" : "btn-outline-info"}`}
-                >
-                  All
-                </button>
-
-                <button
-                  onClick={() => setFilter("image")}
-                  className={`btn btn-sm ${filter === "image" ? "btn-info" : "btn-outline-info"}`}
-                >
-                  Images
-                </button>
-
-                <button
-                  onClick={() => setFilter("video")}
-                  className={`btn btn-sm ${filter === "video" ? "btn-info" : "btn-outline-info"}`}
-                >
-                  Videos
-                </button>
-
-                <button
-                  className="btn btn-sm btn-secondary ms-auto"
-                  onClick={() => setSelectedClub(null)}
-                >
-                  ← Back
-                </button>
-
+              {/* FILTER */}
+              <div className="mb-4 d-flex gap-2 flex-wrap">
+                {["all", "image", "video"].map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => setFilter(item)}
+                    className={`btn rounded-pill px-4 ${
+                      filter === item
+                        ? "btn-info text-dark fw-bold"
+                        : "btn-outline-info"
+                    }`}
+                  >
+                    {item.toUpperCase()}
+                  </button>
+                ))}
               </div>
 
-              <div className="row g-1">
-                {filteredMedia.map(item => (
-                  <div className="col-4 col-md-3 col-lg-2" key={item._id}>
-                    <div className="position-relative">
-
-                      {/* MEDIA */}
+              {/* MEDIA */}
+              <div className="row g-3">
+                {filteredMedia.map((item) => (
+                  <div className="col-6 col-md-4 col-lg-3 col-xl-2" key={item._id}>
+                    <div
+                      className="position-relative rounded-4 overflow-hidden shadow"
+                      style={{ cursor: "pointer" }}
+                    >
                       {item.type === "image" ? (
                         <img
                           src={`${serverUrl}${item.url}`}
-                          className="w-100"
-                          onDoubleClick={() => handleDoubleClick(item)}
+                          onClick={() => setPreviewItem(item)}
                           style={{
-                            height: "200px",
-                            objectFit: "cover",
-                            borderRadius: "10px"
+                            width: "100%",
+                            height: "220px",
+                            objectFit: "cover"
                           }}
                         />
                       ) : (
                         <video
                           src={`${serverUrl}${item.url}`}
-                          className="w-100"
-                          onDoubleClick={() => handleDoubleClick(item)}
+                          onClick={() => setPreviewItem(item)}
                           style={{
-                            height: "200px",
-                            objectFit: "cover",
-                            borderRadius: "10px"
+                            width: "100%",
+                            height: "220px",
+                            objectFit: "cover"
                           }}
                         />
                       )}
 
-                      {/* ACTION BUTTONS (TOP RIGHT) */}
+                      {/* OVERLAY */}
                       <div
-                        style={{
-                          position: "absolute",
-                          top: "10px",
-                          right: "10px",
-                          display: "flex",
-                          gap: "8px"
-                        }}
+                        className="position-absolute top-0 end-0 p-2 d-flex gap-2"
                       >
-
-                        {/* ❤️ LIKE */}
-                        <span
+                        <button
                           onClick={() => handleFeature(item._id)}
-                          style={{
-                            fontSize: "20px",
-                            cursor: "pointer",
-                            background: "rgba(0,0,0,0.6)",
-                            borderRadius: "50%",
-                            padding: "5px 8px"
-                          }}
+                          className="btn btn-sm btn-light rounded-circle"
                         >
                           {item.isFeatured ? "❤️" : "🤍"}
-                        </span>
+                        </button>
 
-                        {/* 🗑 DELETE */}
-                        <span
+                        <button
                           onClick={() => handleDelete(item._id)}
-                          style={{
-                            fontSize: "18px",
-                            cursor: "pointer",
-                            background: "rgba(0,0,0,0.6)",
-                            borderRadius: "50%",
-                            padding: "5px 8px",
-                            color: "#ff4d4f"
-                          }}
+                          className="btn btn-sm btn-danger rounded-circle"
                         >
                           🗑
-                        </span>
-
+                        </button>
                       </div>
-
                     </div>
                   </div>
                 ))}
@@ -261,11 +215,14 @@ const GlobalGalleries = () => {
         </>
       )}
 
-      {/* PREVIEW MODAL */}
+      {/* MODAL */}
       {previewItem && (
         <div
-          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-          style={{ background: "rgba(0,0,0,0.9)", zIndex: 999 }}
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+          style={{
+            background: "rgba(0,0,0,0.9)",
+            zIndex: 999
+          }}
           onClick={() => setPreviewItem(null)}
         >
           <div
@@ -275,33 +232,28 @@ const GlobalGalleries = () => {
             {previewItem.type === "image" ? (
               <img
                 src={`${serverUrl}${previewItem.url}`}
-                className="w-100"
-                style={{ borderRadius: "10px" }}
+                className="w-100 rounded-4"
               />
             ) : (
               <video
                 src={`${serverUrl}${previewItem.url}`}
                 controls
                 autoPlay
-                className="w-100"
-                style={{ borderRadius: "10px" }}
+                className="w-100 rounded-4"
               />
             )}
 
-            <div className="text-white mt-2 d-flex justify-content-between">
-              <span>{previewItem.title}</span>
-
+            <div className="text-center mt-3">
               <button
-                className="btn btn-sm btn-danger"
-                onClick={() => handleDelete(previewItem._id)}
+                className="btn btn-light rounded-pill px-4"
+                onClick={() => setPreviewItem(null)}
               >
-                Delete
+                Close
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };

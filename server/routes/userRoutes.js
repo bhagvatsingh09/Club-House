@@ -1,15 +1,26 @@
 // routes/userRoutes.js
+const mongoose = require("mongoose");
 const router = require('express').Router();
 const User = require('../models/User');
 const Event = require('../models/Event');
+
 // GET: Fetch User Profile
-router.get('/:userId', async (req, res) => {
+router.get("/club-volunteers/:clubId", async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select('-password');
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
+    const clubId = new mongoose.Types.ObjectId(req.params.clubId);
+
+    const volunteers = await User.find({
+      volunteerClub: clubId,
+      clubRole: "Volunteer"
+    }).select("name email volunteerRole clubRole assignedTask taskDeadline taskStatus");
+
+    console.log("FOUND VOLUNTEERS:", volunteers);
+
+    res.json(volunteers);
+
   } catch (err) {
-    res.status(500).json({ message: "Error fetching profile", error: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Failed" });
   }
 });
 
@@ -18,22 +29,22 @@ router.put('/:userId/update', async (req, res) => {
   try {
     const { name, bio, department, studentId, year, phone, designation, photo } = req.body;
 
-const updatedUser = await User.findByIdAndUpdate(
-  req.params.userId,
-  {
-    $set: {
-      name,
-      bio,
-      department,
-      studentId,
-      year,
-      phone,
-      designation,
-      photo
-    }
-  },
-  { new: true }
-).select('-password');
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.userId,
+      {
+        $set: {
+          name,
+          bio,
+          department,
+          studentId,
+          year,
+          phone,
+          designation,
+          photo
+        }
+      },
+      { new: true }
+    ).select('-password');
 
     res.json({ message: "Profile updated successfully", user: updatedUser });
   } catch (err) {
@@ -41,15 +52,8 @@ const updatedUser = await User.findByIdAndUpdate(
   }
 });
 
-// router.get("/:id/registrations", async (req, res) => {
-//   const data = await Registration.find({ userId: req.params.id })
-//     .populate("eventId", "title")
-//     .populate("clubId", "name");
 
-//   res.json(data);
-// });
-
-router.get('/:userId/registrations', async (req, res) => {
+router.get("/:userId/registrations", async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -58,16 +62,12 @@ router.get('/:userId/registrations', async (req, res) => {
         { participants: userId },
         { pendingParticipants: userId }
       ]
-    }).populate('club', 'name');
+    }).populate("club", "name");
 
     const formatted = events.map(event => ({
       _id: event._id,
-      eventId: {
-        title: event.title
-      },
-      clubId: {
-        name: event.club?.name
-      },
+      eventId: { title: event.title },
+      clubId: { name: event.club?.name },
       status: event.participants.some(
         id => id.toString() === userId.toString()
       )
@@ -76,12 +76,11 @@ router.get('/:userId/registrations', async (req, res) => {
     }));
 
     res.json(formatted);
-
   } catch (err) {
-    console.error("Registration error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 router.get('/', async (req, res) => {
   try {
@@ -96,4 +95,20 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: "Error fetching users" });
   }
 });
+
+router.get('/:userId', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select('-password');
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching profile", error: err.message });
+  }
+});
+
+
+
+
+
+
 module.exports = router;

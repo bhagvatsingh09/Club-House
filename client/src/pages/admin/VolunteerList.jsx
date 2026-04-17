@@ -37,10 +37,10 @@ const VolunteerList = () => {
     }
 
     if (clubFilter !== "All") {
-  data = data.filter(
-    v => v.clubId && v.clubId.name === clubFilter
-  );
-}
+      data = data.filter(
+        v => v.clubId && v.clubId.name === clubFilter
+      );
+    }
 
     setFiltered(data);
   }, [search, clubFilter, volunteers]);
@@ -63,7 +63,15 @@ const VolunteerList = () => {
       alert("Failed to remove");
     }
   };
-  
+  const toggleVolunteer = async (id) => {
+    try {
+      await API.put(`/admin/toggle-volunteer/${id}`);
+      fetchVolunteers();
+    } catch (err) {
+      alert("Failed to update role");
+    }
+  };
+
 
   return (
     <div className="container-fluid p-4">
@@ -81,7 +89,7 @@ const VolunteerList = () => {
         <input
           type="text"
           placeholder="Search volunteer..."
-         className="form-control bg-transparent text-light border-light"
+          className="form-control bg-transparent text-light border-light"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -93,7 +101,7 @@ const VolunteerList = () => {
       ) : (
         <div className="row g-4">
           {filtered.map((v) => (
-            <div className="col-md-6 col-lg-4" key={v._id}>
+            <div className="col-md-6 col-lg-4" key={v._id || v.id}>
               <div className="card p-4 shadow-lg border-0 h-100"
                 style={{ backgroundColor: "#050a18" }}
               >
@@ -119,9 +127,9 @@ const VolunteerList = () => {
                 <div className="mb-3">
                   <span className="text-secondary small">Assigned Events:</span>
                   <div className="mt-2">
-                    {v.assignedEvents.length > 0 ? (
+                    {v.assignedEvents?.length > 0 ? (
                       v.assignedEvents.map(e => (
-                        <span key={e._id} className="badge bg-info me-2 mb-1">
+                        <span key={e._id || e.id} className="badge bg-info me-2 mb-1">
                           {e.title}
                         </span>
                       ))
@@ -140,10 +148,15 @@ const VolunteerList = () => {
 
                 {/* ACTION */}
                 <button
-                  className="btn btn-outline-danger btn-sm mt-3"
-                  onClick={() => handleRemove(v._id)}
+                  className={`btn btn-sm mt-3 ${v.clubRole === "Volunteer"
+                      ? "btn-outline-danger"
+                      : "btn-outline-success"
+                    }`}
+                  onClick={() => toggleVolunteer(v._id)}
                 >
-                  Remove Volunteer
+                  {v.clubRole === "Volunteer"
+                    ? "Remove Volunteer"
+                    : "Make Volunteer"}
                 </button>
 
               </div>

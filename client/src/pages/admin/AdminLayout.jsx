@@ -8,7 +8,7 @@ const AdminLayout = () => {
     { name: 'Club Management', path: '/admin/clubs', icon: '🏛️' },
     { name: 'Assign Tasks', path: '/admin/tasks', icon: '🎯' },
     { name: 'Global Gallery', path: '/admin/galleries', icon: '🖼️' },
-    { name: 'User Logs', path: '/admin/logs', icon: '📜' },
+    // { name: 'User Logs', path: '/admin/logs', icon: '📜' },
   ];
 
   return (

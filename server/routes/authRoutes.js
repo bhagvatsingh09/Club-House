@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// --- REGISTER ---
 router.post('/register', async (req, res) => {
   try {
     const {
@@ -22,44 +21,76 @@ router.post('/register', async (req, res) => {
 
     // 1. Prevent Admin registration
     if (role.toLowerCase() === 'admin') {
-      return res.status(403).json({ message: "Admin accounts must be created manually." });
+      return res.status(403).json({
+        message: "Admin accounts must be created manually."
+      });
     }
 
-    // 2. Check existing user
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+    // 2. Email already exists
+    const existingEmail = await User.findOne({ email });
+
+    if (existingEmail) {
+      return res.status(400).json({
+        message: "Email already exists"
+      });
     }
 
-    // 3. Basic validation
+    // 3. Phone already exists
+    if (phone) {
+      const existingPhone = await User.findOne({ phone });
+
+      if (existingPhone) {
+        return res.status(400).json({
+          message: "Phone already exists"
+        });
+      }
+    }
+
+    // 4. Student ID already exists
+    if (role === 'student' && studentId) {
+      const existingStudentId = await User.findOne({ studentId });
+
+      if (existingStudentId) {
+        return res.status(400).json({
+          message: "Student ID already exists"
+        });
+      }
+    }
+
+    // 5. Basic validation
     if (!name || !email || !password || !department) {
-      return res.status(400).json({ message: "Please fill all required fields" });
+      return res.status(400).json({
+        message: "Please fill all required fields"
+      });
     }
 
-    // 4. Role-based validation
+    // 6. Role based validation
     if (role === 'student') {
       if (!studentId || !year) {
-        return res.status(400).json({ message: "Student ID and Year are required" });
+        return res.status(400).json({
+          message: "Student ID and Year are required"
+        });
       }
     }
 
     if (role === 'faculty') {
       if (!designation) {
-        return res.status(400).json({ message: "Designation is required" });
+        return res.status(400).json({
+          message: "Designation is required"
+        });
       }
     }
 
-    // 5. Hash password
+    // 7. Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // 6. Create user
+    // 8. Create user
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
       role: role.charAt(0).toUpperCase() + role.slice(1),
 
-      // Extra fields
       studentId,
       department,
       year,
@@ -70,14 +101,17 @@ router.post('/register', async (req, res) => {
 
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({
+      message: "User registered successfully"
+    });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message
+    });
   }
 });
-
 
 // --- LOGIN ---
 router.post('/login', async (req, res) => {
@@ -118,7 +152,7 @@ router.post('/login', async (req, res) => {
         phone: user.phone,
         bio: user.bio,
         clubId: user.clubId,
-        isVolunteer: user.isVolunteer 
+        clubRole: user.clubRole
       }
     });
 

@@ -3,6 +3,7 @@ import API from "../../api/axios";
 
 const FacultyList = () => {
   const [faculty, setFaculty] = useState([]);
+  
 
   useEffect(() => {
     const fetchFaculty = async () => {

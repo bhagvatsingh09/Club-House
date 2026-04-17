@@ -22,7 +22,18 @@ const TaskSchema = new mongoose.Schema({
     type: String,
     enum: ['Low', 'Medium', 'High'],
     default: 'Medium'
-  }
+  },
+  assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
+status: {
+  type: String,
+  enum: ["Pending", "In Progress", "Completed"],
+  default: "Pending"
+},
+eventId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Event"
+}
 
 }, { timestamps: true });
 

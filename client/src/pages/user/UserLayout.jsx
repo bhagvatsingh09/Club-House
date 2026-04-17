@@ -7,6 +7,8 @@ const UserLayout = () => {
 
   // 🔥 Get user from localStorage (or context if you use one)
   const user = JSON.parse(localStorage.getItem("user"));
+  // console.log("USER:", user);
+  // console.log("clubRole:", user?.clubRole);
 
   const menuItems = [
     { name: 'Dashboard', path: '/user/dashboard', icon: '🏠' },
@@ -17,36 +19,34 @@ const UserLayout = () => {
 
   return (
     <div className="dashboard-wrapper landing-body">
-      
+
       {/* Sidebar */}
       <aside className="sidebar">
         <h4 className="text-info fw-bold mb-5 px-3">ClubHub</h4>
-        
+
         <nav>
           {menuItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`nav-link-custom ${
-                location.pathname.startsWith(item.path) ? 'active' : ''
-              }`}
+              className={`nav-link-custom ${location.pathname.startsWith(item.path) ? 'active' : ''
+                }`}
             >
               {item.icon} <span className="ms-2">{item.name}</span>
             </Link>
           ))}
 
           {/* ✅ Volunteer Dashboard (ONLY IF VOLUNTEER) */}
-          {user?.isVolunteer && (
+          {user?.clubRole === "Volunteer" && (
             <Link
               to="/user/volunteer-dashboard"
-              className={`nav-link-custom ${
-                location.pathname.startsWith('/user/volunteer-dashboard') ? 'active' : ''
-              }`}
+              className={`nav-link-custom ${location.pathname.startsWith('/user/volunteer-dashboard') ? 'active' : ''
+                }`}
             >
               🧑‍💼 <span className="ms-2">Volunteer Dashboard</span>
             </Link>
           )}
-          
+
           <hr className="text-secondary opacity-25 mt-4" />
 
           {/* Logout */}
@@ -69,9 +69,9 @@ const UserLayout = () => {
             ></div>
           </div>
         </header>
-        
+
         {/* Sub-pages render here */}
-        <Outlet /> 
+        <Outlet />
       </main>
     </div>
   );

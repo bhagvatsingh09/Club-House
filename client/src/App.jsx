@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import UserLayout from './pages/user/UserLayout';
 import StudentDashboard from './pages/user/StudentDashboard';
 import Landingpage from './pages/LandingPage';
@@ -8,8 +10,7 @@ import ExploreClub from './pages/user/ExploreClub'
 import MyEvents from './pages/user/MyEvents';
 import Profile from './pages/user/Profile';
 import CoordLayout from './pages/coordinator/CoordLayout';
-import AnnounceEvent from './pages/coordinator/Announce';
-import EventApprovals from './pages/coordinator/EventApprovals';
+import EventsPage from "./pages/coordinator/EventsPage"; import EventApprovals from './pages/coordinator/EventApprovals';
 import MemberManagement from './pages/coordinator/MemberManagement';
 import CoordDashboard from './pages/coordinator/CoordDashboard';
 import GalleryManagement from './pages/coordinator/GalleryManagement';
@@ -28,6 +29,8 @@ import VolunteerList from './pages/admin/VolunteerList';
 import AdminEvents from "./pages//admin/AdminEvents";
 import FacultyTasks from "./pages/coordinator/FacultyTasks";
 import TotalRegistration from "./pages/admin/TotalRegistration";
+import VolunteerDashboard from "./pages/user/VolunteerDashboard";
+
 
 
 
@@ -44,13 +47,19 @@ function App() {
 
         {/* User / Student Routes */}
         <Route path="/user" element={<UserLayout />}>
+          
           <Route index element={<Navigate to="/user/dashboard" />} />
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="clubs" element={<ExploreClub />} />
           <Route path="events" element={<MyEvents />} />
           <Route path='profile' element={<Profile />} />
           <Route path="event-register/:eventId" element={<EventRegister />} />
-          
+          <Route path="volunteer-dashboard" element={
+            JSON.parse(localStorage.getItem("user"))?.clubRole === "Volunteer"
+              ? <VolunteerDashboard />
+              : <Navigate to="/user/dashboard" />
+          } />
+
 
 
         </Route>
@@ -59,13 +68,13 @@ function App() {
         <Route path="/coord" element={<CoordLayout />}>
           <Route index element={<Navigate to="/coord/dashboard" />} />
           <Route path='dashboard' element={<CoordDashboard />} />
-          <Route path="announce" element={<AnnounceEvent />} />
+          <Route path="events" element={<EventsPage />} />
           <Route path="approvals" element={<EventApprovals />} />
           <Route path="members" element={<MemberManagement />} />
           <Route path="gallery" element={<GalleryManagement />} />
-        
-             <Route path="tasks" element={<FacultyTasks />} />
-                   {/* Add other pages like Dashboard or Gallery here */}
+
+          <Route path="tasks" element={<FacultyTasks />} />
+          {/* Add other pages like Dashboard or Gallery here */}
         </Route>
 
         {/* Admin Routes */}

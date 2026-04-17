@@ -3,8 +3,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 const path = require('path');
-
+const volunteerRoutes = require("./routes/volunteerRoutes");
 const app = express();
+const attendanceRoutes = require("./routes/attendance");
 
 // ✅ FIXED Middleware
 app.use(cors({
@@ -28,7 +29,8 @@ app.use('/api/gallery', require('./routes/galleryRoutes'));
 app.use('/api/users', require('./routes/userRoutes'))
 app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
-
+app.use("/api/volunteer", require("./routes/volunteerRoutes"));
+app.use("/api/attendance", attendanceRoutes);
 
 // Static
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

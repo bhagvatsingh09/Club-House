@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api/axios';
-import AnnounceEvent from './Announce';
+import EventsPage from "./EventsPage";
 import EventApprovals from './EventApprovals';
 import GalleryManagement from './GalleryManagement';
 import { useNavigate } from "react-router-dom";
@@ -77,27 +77,6 @@ const FacultyDashboard = () => {
 
           </div>
 
-          {/* <div className="bg-dark p-1 mt-3 mt-md-0 rounded-pill border border-secondary">
-
-            <TabBtn
-              label="Overview"
-              active={activeTab === "overview"}
-              onClick={() => setActiveTab("overview")}
-            />
-
-            <TabBtn
-              label="Event Approvals"
-              active={activeTab === "approvals"}
-              onClick={() => setActiveTab("approvals")}
-            />
-
-            <TabBtn
-              label="Gallery"
-              active={activeTab === "gallery"}
-              onClick={() => setActiveTab("gallery")}
-            />
-
-          </div> */}
         </div>
 
         <hr className="border-secondary mt-4" />
@@ -123,7 +102,7 @@ const FacultyDashboard = () => {
               </h4>
              
 
-              <AnnounceEvent clubId={user?.clubId} />
+              <EventsPage clubId={user?.clubId} />
 
             </div>
 

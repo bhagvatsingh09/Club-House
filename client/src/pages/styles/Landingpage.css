@@ -109,3 +109,59 @@
 
 .badge-pending { background: #f6ad55; color: #000; }
 .badge-approved { background: #48bb78; color: #fff; }
+
+.gallery-item {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  cursor: pointer;
+}
+
+.gallery-item img,
+.gallery-item video {
+  transition: transform 0.4s ease;
+}
+
+.gallery-item:hover img,
+.gallery-item:hover video {
+  transform: scale(1.1);
+}
+
+.gallery-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+
+.gallery-wrapper {
+  transition: all 0.6s ease;
+}
+
+.gallery-wrapper.show {
+  opacity: 1;
+  transform: translateY(0px);
+}
+
+.gallery-wrapper.hide {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.gallery-card {
+  height: 260px;
+  overflow: hidden;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.gallery-card img,
+.gallery-card video {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s ease;
+}
+
+.gallery-card:hover img,
+.gallery-card:hover video {
+  transform: scale(1.08);
+}

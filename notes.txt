@@ -1,5 +1,15 @@
-assign task(admin)
-mock user log(admin)
-dashboard mock data(coord)
-announce bug(coord)
-dashboard register events(students)
+client/
+  src/
+    pages/
+        /admin
+        /coordinator
+        /styles
+        /user
+    api/
+    App.jsx
+    App.css
+
+server/
+  routes/
+  models/    
+

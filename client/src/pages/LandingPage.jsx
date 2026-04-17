@@ -7,26 +7,57 @@ import { useEffect, useState } from 'react';
 
 const Landingpage = () => {
   const [featured, setFeatured] = useState([]);
+  const [visibleItems, setVisibleItems] = useState([]);
+  const [fade, setFade] = useState(true);
 
   useEffect(() => {
     fetchFeatured();
   }, []);
 
+  useEffect(() => {
+    fetchFeatured();
+  }, []);
+
+  useEffect(() => {
+    if (featured.length > 0) {
+      updateGallery();
+
+      const interval = setInterval(() => {
+        setFade(false);
+
+        setTimeout(() => {
+          updateGallery();
+          setFade(true);
+        }, 500);
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [featured]);
+
+
   const fetchFeatured = async () => {
     try {
       const res = await fetch("http://localhost:5000/api/admin/gallery/featured");
       const data = await res.json();
-      setFeatured(data);
+
+      const shuffled = [...data].sort(() => Math.random() - 0.5);
+
+      setFeatured(shuffled);
     } catch (err) {
       console.error(err);
     }
+  };
+  const updateGallery = () => {
+    const shuffled = [...featured].sort(() => Math.random() - 0.5);
+    setVisibleItems(shuffled.slice(0, 4));
   };
   return (
     <div className="landing-body min-vh-100">
       {/* Navbar */}
       <nav className="navbar navbar-expand-lg navbar-dark custom-navbar">
         <div className="container">
-          <Link className="navbar-brand fw-bold" to="/">College Club</Link>
+          <Link className="navbar-brand fw-bold" to="/">Club House</Link>
           <div className="collapse navbar-collapse">
             <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
               {/* <li className="nav-item"><Link className="nav-link" to="/">Home</Link></li> */}
@@ -51,44 +82,36 @@ const Landingpage = () => {
           <div className="hero-overlay text-center">
             <h1 className="display-4 fw-bold">Sports & Cultural</h1>
             <p className="fs-5">Participate in events and showcase your talent.</p>
-            <button className="btn btn-primary-custom mt-3">Explore Clubs</button>
           </div>
         </div>
       </div>
 
-      {/* Featured Gallery */}
+      {/* Animated Gallery */}
       <div className="container my-5">
         <h2 className="text-center fw-bold mb-5 text-info">
           Highlights From Our Clubs
         </h2>
 
-        {featured.length === 0 ? (
+        {visibleItems.length === 0 ? (
           <p className="text-center text-secondary">No highlights yet</p>
         ) : (
-          <div className="row g-1">
-            {featured.map(item => (
-              <div className="col-6 col-md-4 col-lg-2" key={item._id}>
-                <div
-                  style={{
-                    aspectRatio: "1/1",
-                    overflow: "hidden"
-                  }}
-                >
+          <div className={`row g-3 gallery-wrapper ${fade ? "show" : "hide"}`}>
+            {visibleItems.map((item) => (
+              <div className="col-12 col-md-6 col-lg-3" key={item._id}>
+                <div className="gallery-card">
                   {item.type === "image" ? (
                     <img
                       src={`http://localhost:5000${item.url}`}
-                      className="w-100 h-100"
-                      style={{
-                        objectFit: "cover",
-                        transition: "0.3s"
-                      }}
+                      className="w-100 h-100 rounded"
+                      alt=""
                     />
                   ) : (
                     <video
                       src={`http://localhost:5000${item.url}`}
-                      className="w-100 h-100"
-                      style={{ objectFit: "cover" }}
+                      className="w-100 h-100 rounded"
                       muted
+                      autoPlay
+                      loop
                     />
                   )}
                 </div>

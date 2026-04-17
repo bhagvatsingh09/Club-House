@@ -21,13 +21,19 @@ const UserSchema = new mongoose.Schema({
   },
 
   // COMMON FIELDS
-  phone: { type: String },
+  phone: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   bio: { type: String, default: "No Bio Added" },
   photo: { type: String },
 
   // STUDENT FIELDS
   studentId: {
     type: String,
+    unique: true,
+    sparse: true,
     required: function () {
       return this.role === 'Student';
     }
@@ -73,19 +79,24 @@ const UserSchema = new mongoose.Schema({
   },
 
   volunteerClub: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'Club',
-  default: null
-},
-club: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'Club'
-},
-
-isVolunteer: {
-    type: Boolean,
-    default: false
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Club',
+    default: null
+  },
+  club: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Club'
+  },
+  volunteerRole: { type: String, default: "" },
+  assignedTask: { type: String, default: "" },
+  taskDeadline: { type: Date },
+  taskStatus: {
+    type: String,
+    enum: ["Pending", "In Progress", "Completed"],
+    default: "Pending"
   }
+
+
 
 }, { timestamps: true });
 

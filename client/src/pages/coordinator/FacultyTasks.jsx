@@ -3,6 +3,7 @@ import API from "../../api/axios";
 
 const FacultyTasks = () => {
   const [tasks, setTasks] = useState([]);
+  const [loadingTaskId, setLoadingTaskId] = useState(null);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const clubId = user?.clubId;

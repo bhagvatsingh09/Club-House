@@ -5,7 +5,7 @@ const CoordLayout = () => {
   const location = useLocation();
   const menuItems = [
     { name: 'Dashboard', path: '/coord/dashboard', icon: '📊' },
-    { name: 'Event Management', path: '/coord/announce', icon: '📢' },
+    { name: 'Event Management', path: '/coord/Events', icon: '📢' },
     { name: 'Member Management', path: '/coord/members', icon: '👥' },
     { name: 'Event Approvals', path: '/coord/approvals', icon: '✅' },
     { name: 'Club Gallery', path: '/coord/gallery', icon: '🖼️' },

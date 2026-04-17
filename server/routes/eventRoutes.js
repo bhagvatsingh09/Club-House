@@ -23,7 +23,7 @@ router.get('/club/:clubId', async (req, res) => {
     const events = await Event.find({ club: req.params.clubId })
       .populate('participants', 'name email')
       .populate('pendingParticipants', 'name email')
-      .populate('volunteers', 'name email')
+      .populate('volunteers.user', 'name email')
       .populate('club', 'name')
       .sort({ date: 1 });
 
@@ -68,9 +68,9 @@ router.post('/:eventId/register', async (req, res) => {
     }
 
     // 🔥 PREVENT VOLUNTEER REGISTRATION
-    const isVolunteer = event.volunteers?.some(
-      v => v.toString() === userId
-    );
+    // const isVolunteer = event.volunteers?.some(
+    //   v => v.toString() === userId
+    // );
 
     if (isVolunteer) {
       return res.status(400).json({
@@ -289,17 +289,22 @@ router.get('/club/:clubId/approved', async (req, res) => {
 // ============================
 router.put('/update-role/:userId', async (req, res) => {
   try {
-    const { role } = req.body;
+    const { role, clubId } = req.body;
+
+    if (!clubId) {
+      return res.status(400).json({ message: "clubId is required" });
+    }
 
     const user = await User.findByIdAndUpdate(
       req.params.userId,
       { clubRole: role },
-      { new: true }
+      { returnDocument: 'after' } // ✅ fix warning also
     );
 
     res.json({ message: "Role updated", user });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to update role" });
   }
 });
@@ -320,6 +325,30 @@ router.put('/remove-member/:userId', async (req, res) => {
   }
 });
 
+// ============================
+// UPDATE EVENT
+// ============================
+router.put('/:eventId', async (req, res) => {
+  try {
+    const updatedEvent = await Event.findByIdAndUpdate(
+      req.params.eventId,
+      req.body,
+      { new: true }
+    );
+
+    if (!updatedEvent) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    res.json(updatedEvent);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Update failed" });
+  }
+});
+
+// DELET EVENT
 router.delete('/:eventId', async (req, res) => {
   try {
     await Event.findByIdAndDelete(req.params.eventId);
@@ -335,44 +364,64 @@ router.delete('/:eventId', async (req, res) => {
 // Assign a volunteer to an event
 router.put("/:eventId/assign-volunteer", async (req, res) => {
   try {
-    const { eventId } = req.params;
-    const { userId } = req.body;
+    const { userId, role, assignedTask } = req.body;
 
-    if (!userId) return res.status(400).json({ message: "User ID required" });
+    // 🔴 CHECK ACTIVE EVENT FIRST
+    const activeEvent = await Event.findOne({
+      "volunteers.user": userId,
+      date: { $gte: new Date() }
+    });
 
-    const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: "Event not found" });
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // Use the event's club as reference
-    const clubId = event.club?.toString(); // Assuming event.club stores the club ID
-    if (!clubId) return res.status(400).json({ message: "Event has no club assigned" });
-
-    // Prevent assigning a member who is already a volunteer in another club
-    if (user.volunteerClub && user.volunteerClub.toString() !== clubId) {
-      return res.status(400).json({ message: "User is a volunteer in another club" });
+    if (activeEvent) {
+      return res.status(400).json({
+        message: "Volunteer is already assigned to an active event"
+      });
     }
 
-    // Assign volunteer to event
-    if (!event.volunteers.includes(user._id)) {
-      event.volunteers.push(user._id);
+    const event = await Event.findById(req.params.eventId);
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
     }
+
+    // normalize old data
+    event.volunteers = (event.volunteers || []).map(v => {
+      if (v.user) return v;
+
+      return {
+        user: v,
+        role: "",
+        task: "",
+        deadline: null
+      };
+    });
+
+    const existing = event.volunteers.find(
+      v => v.user.toString() === userId
+    );
+
+    if (existing) {
+      existing.role = role;
+      existing.task = assignedTask;
+    } else {
+      event.volunteers.push({
+        user: userId,
+        role,
+        task: assignedTask,
+        deadline: null
+      });
+    }
+
     await event.save();
 
-    // Update user
-    user.clubRole = "Volunteer";
-    user.volunteerClub = clubId;
-    await user.save();
+    const updated = await Event.findById(req.params.eventId)
+      .populate("volunteers.user", "name email");
 
-    // Return event with populated volunteers
-    const populatedEvent = await Event.findById(eventId).populate("volunteers", "name email");
-    return res.json(populatedEvent);
+    res.json(updated);
 
   } catch (err) {
-    console.error("Assign volunteer error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error(err);
+    res.status(500).json({ message: "Assign failed" });
   }
 });
 
@@ -383,44 +432,157 @@ router.put('/:eventId/remove-volunteer', async (req, res) => {
   try {
     const { userId } = req.body;
 
-    const event = await Event.findById(req.params.eventId)
-      .populate('participants', 'name email')
-      .populate('volunteers', 'name email');
+    const event = await Event.findById(req.params.eventId);
 
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // ❌ Check if user is actually a volunteer in this event
-    const isVolunteer = event.volunteers.some(
-      v => v._id.toString() === userId
+    // ✅ Normalize structure
+    event.volunteers = event.volunteers.map(v => {
+      if (v.user) return v;
+      return { user: v };
+    });
+
+    const exists = event.volunteers.some(
+      v => v.user.toString() === userId
     );
 
-    if (!isVolunteer) {
-      return res.status(400).json({ message: "User is not a volunteer in this event" });
+    if (!exists) {
+      return res.status(400).json({ message: "User is not a volunteer" });
     }
 
-    // ✅ Remove from volunteers array ONLY (not from club)
     event.volunteers = event.volunteers.filter(
-      v => v._id.toString() !== userId
+      v => v.user.toString() !== userId
     );
 
     await event.save();
 
-    // 🔁 Return updated event with populated data
     const updatedEvent = await Event.findById(event._id)
-      .populate('participants', 'name email')
-      .populate('volunteers', 'name email');
+      .populate("participants", "name email")
+      .populate("volunteers.user", "name email");
 
     res.json(updatedEvent);
 
   } catch (err) {
-    console.error("Remove volunteer error:", err);
+    console.error("REMOVE ERROR:", err);
     res.status(500).json({ message: "Failed to remove volunteer" });
   }
 });
 
+router.get("/volunteer/:id", async (req, res) => {
+  try {
+    const events = await Event.find({
+      "volunteers.user": req.params.id
+    })
+      .populate("club", "name")
+      .sort({ date: 1 });
 
-module.exports = router;
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch events" });
+  }
+});
+
+// Upadate Role=======//
+router.put("/:eventId/update-volunteer", async (req, res) => {
+  try {
+    const { userId, role, task, deadline } = req.body;
+
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Event not found" });
+
+    const volunteer = event.volunteers.find(
+      v => v.user.toString() === userId
+    );
+
+    if (!volunteer) {
+      return res.status(404).json({ message: "Volunteer not found" });
+    }
+
+    volunteer.role = role;
+    volunteer.task = task;
+    volunteer.deadline = deadline;
+
+    await event.save();
+
+    const updatedEvent = await Event.findById(req.params.id)
+      .populate("participants", "name email")
+      .populate("pendingParticipants", "name email")
+      .populate("volunteers.user", "name email");
+
+    res.json(updatedEvent);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Update failed" });
+  }
+});
+
+router.delete("/:eventId/remove-volunteer/:userId", async (req, res) => {
+    try {
+      const { eventId, userId } = req.params;
+
+      const event = await Event.findById(eventId);
+
+      if (!event) {
+        return res.status(404).json({
+          message: "Event not found"
+        });
+      }
+
+      event.volunteers = event.volunteers.filter(
+        (v) => v.user.toString() !== userId
+      );
+
+      await event.save();
+
+      res.json({
+        message: "Volunteer removed successfully"
+      });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({
+        message: "Remove failed"
+      });
+    }
+  }
+);
+
+router.put("/:eventId/assign-volunteer", async (req, res) => {
+  try {
+    const { userId, role, task } = req.body;
+
+    // console.log("REQ BODY:", req.body); // 👈 DEBUG
+
+    const event = await Event.findById(req.params.eventId);
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // ✅ push correct structure
+    event.volunteers.push({
+      user: userId,
+      role,
+      task: assignedTask || ""   // ✅ IMPORTANT
+    });
+
+    await event.save();
+
+    const updatedEvent = await Event.findById(req.params.eventId)
+      .populate("volunteers.user", "name");
+
+    res.json(updatedEvent);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Assignment failed" });
+  }
+});
+
+
+
 
 module.exports = router;

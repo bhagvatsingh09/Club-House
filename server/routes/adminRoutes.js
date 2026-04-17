@@ -109,16 +109,14 @@ router.get('/faculty-coordinators', async (req, res) => {
   }
 });
 
+// ============================
 // GET ALL VOLUNTEERS
-// GET ALL VOLUNTEERS WITH EVENTS + CLUB
+// ============================
 router.get("/volunteers", async (req, res) => {
   try {
     const volunteers = await User.find({
-      clubRole: "Volunteer"   // ✅ FIXED
-    })
-      .populate("clubId", "name");
-
-    const Event = require("../models/Event");
+      clubRole: "Volunteer"
+    }).populate("clubId", "name");
 
     const volunteersWithEvents = await Promise.all(
       volunteers.map(async (v) => {
@@ -134,11 +132,13 @@ router.get("/volunteers", async (req, res) => {
     );
 
     res.json(volunteersWithEvents);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 // ============================
 // ASSIGN FACULTY HEAD
@@ -251,17 +251,17 @@ router.delete("/volunteer/:id", async (req, res) => {
 
 // make member to volunteer
 // ====================
-router.post("/make-volunteer/:id", async (req, res) => {
-  try {
-    await User.findByIdAndUpdate(req.params.id, {
-      isVolunteer: true
-    });
+// router.post("/make-volunteer/:id", async (req, res) => {
+//   try {
+//     await User.findByIdAndUpdate(req.params.id, {
+//       isVolunteer: true
+//     });
 
-    res.json({ message: "User promoted to volunteer" });
-  } catch (err) {
-    res.status(500).json({ message: "Server Error" });
-  }
-});
+//     res.json({ message: "User promoted to volunteer" });
+//   } catch (err) {
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// });
 
 // ============================
 // ISSUE TASK
@@ -653,6 +653,34 @@ router.put('/gallery/feature/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to update" });
+  }
+});
+
+// ============================
+// 🔁 TOGGLE VOLUNTEER ROLE
+// ============================
+router.put("/toggle-volunteer/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Toggle Member ↔ Volunteer
+    user.clubRole =
+      user.clubRole === "Volunteer" ? "Member" : "Volunteer";
+
+    await user.save();
+
+    res.json({
+      message: "Role updated successfully",
+      clubRole: user.clubRole
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
   }
 });
 

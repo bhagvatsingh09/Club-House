@@ -1,0 +1,76 @@
+.events-page {
+  min-height: 100vh;
+  padding: 40px;
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(135deg, #0f172a, #1e293b, #111827);
+}
+
+/* Header */
+.events-header {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 30px 35px;
+  margin-bottom: 30px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+}
+
+.events-header h1 {
+  margin: 0;
+  font-size: 34px;
+  color: white;
+}
+
+.events-header p {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Main Box */
+.events-container {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px);
+  border-radius: 24px;
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Buttons */
+.events-nav {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.events-nav button {
+  padding: 12px 22px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  color: white;
+  background: rgba(255, 255, 255, 0.08);
+  transition: 0.3s ease;
+}
+
+.events-nav button:hover {
+  transform: translateY(-2px);
+}
+
+.events-nav .purple.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+.events-nav .blue.active {
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+}
+
+/* Content */
+.events-content {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 18px;
+  padding: 25px;
+  min-height: 500px;
+}

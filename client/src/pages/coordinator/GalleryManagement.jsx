@@ -8,11 +8,9 @@ const GalleryManagement = () => {
   const [uploading, setUploading] = useState(false);
 
   const [bannerFile, setBannerFile] = useState(null);
-const [clubBanner, setClubBanner] = useState("");
-const [bannerUploading, setBannerUploading] = useState(false);
+  const [clubBanner, setClubBanner] = useState("");
+  const [bannerUploading, setBannerUploading] = useState(false);
 
-
-  
   const [selectedFile, setSelectedFile] = useState(null);
   const [mediaTitle, setMediaTitle] = useState('');
   const [selectedEventId, setSelectedEventId] = useState('');
@@ -22,70 +20,76 @@ const [bannerUploading, setBannerUploading] = useState(false);
   const serverUrl = 'http://localhost:5000';
 
   const fetchData = async () => {
-const clubRes = await API.get(`/club`);
-const currentClub = clubRes.data.find(c => c._id === clubId);
-setClubBanner(currentClub?.banner || "");
+    const clubRes = await API.get(`/club`);
+    const currentClub = clubRes.data.find(c => c._id === clubId);
+    setClubBanner(currentClub?.banner || "");
+
     if (!clubId) return;
+
     try {
       const [mediaRes, eventRes] = await Promise.all([
         API.get(`/gallery/club/${clubId}`),
         API.get(`/events/club/${clubId}`)
       ]);
+
       setMedia(mediaRes.data);
       setEvents(eventRes.data);
     } catch (err) {
-      console.error("Failed to load data", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBannerUpload = async (e) => {
-  e.preventDefault();
-
-  if (!bannerFile) return alert("Select banner image");
-
-  const formData = new FormData();
-  formData.append("banner", bannerFile);
-
-  setBannerUploading(true);
-
-  try {
-    const res = await API.post(`/club/${clubId}/upload-banner`, formData, {
-      headers: { "Content-Type": "multipart/form-data" }
-    });
-
-    setClubBanner(res.data.banner);
-    setBannerFile(null);
-
-  } catch {
-    alert("Banner upload failed");
-  } finally {
-    setBannerUploading(false);
-  }
-};
-
   useEffect(() => { fetchData(); }, [clubId]);
+
+  const handleBannerUpload = async (e) => {
+    e.preventDefault();
+
+    if (!bannerFile) return alert("Select banner image");
+
+    const formData = new FormData();
+    formData.append("banner", bannerFile);
+
+    setBannerUploading(true);
+
+    try {
+      const res = await API.post(`/club/${clubId}/upload-banner`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      setClubBanner(res.data.banner);
+      setBannerFile(null);
+    } catch {
+      alert("Banner upload failed");
+    } finally {
+      setBannerUploading(false);
+    }
+  };
 
   const handleUpload = async (e) => {
     e.preventDefault();
+
     if (!selectedFile) return alert("Please select a file.");
-    
+
     const formData = new FormData();
     formData.append('file', selectedFile);
     formData.append('title', mediaTitle || 'Untitled');
+
     if (selectedEventId) formData.append('eventId', selectedEventId);
 
     setUploading(true);
+
     try {
       await API.post(`/gallery/club/${clubId}/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+
       setSelectedFile(null);
       setMediaTitle('');
       setSelectedEventId('');
-      fetchData(); 
-    } catch (err) {
+      fetchData();
+    } catch {
       alert("Upload failed.");
     } finally {
       setUploading(false);
@@ -94,20 +98,20 @@ setClubBanner(currentClub?.banner || "");
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this media?")) return;
+
     try {
       await API.delete(`/gallery/${id}`);
       setMedia(prev => prev.filter(m => m._id !== id));
-    } catch (err) {
+    } catch {
       alert("Delete failed.");
     }
   };
 
-  // --- HOVER LOGIC ---
   const handleMouseEnter = (e) => {
     const video = e.currentTarget.querySelector('video');
     if (video) {
-      video.muted = true; // Required for auto-play
-      video.play().catch(err => console.log("Video play blocked", err));
+      video.muted = true;
+      video.play().catch(() => { });
     }
   };
 
@@ -115,162 +119,294 @@ setClubBanner(currentClub?.banner || "");
     const video = e.currentTarget.querySelector('video');
     if (video) {
       video.pause();
-      video.currentTime = 0; // Reset to start
+      video.currentTime = 0;
     }
   };
 
   return (
-    <div className="container-fluid p-0">
+    <div className="container-fluid py-4 px-3">
 
-      {/* ================= CLUB BANNER ================= */}
-<div className="mb-4">
-  <div className="card p-3 border-0 shadow-sm" style={{ backgroundColor: '#050a18' }}>
-
-    <h6 className="text-info mb-3">Club Banner</h6>
-
-    {/* SHOW BANNER */}
-    {clubBanner ? (
-      <img
-        src={`${serverUrl}${clubBanner}`}
-        alt="Club Banner"
-        className="w-100 rounded mb-3"
-        style={{ height: "180px", objectFit: "cover" }}
-      />
-    ) : (
-      <div className="text-secondary mb-3">No banner uploaded</div>
-    )}
-
-    {/* UPLOAD */}
-    <form onSubmit={handleBannerUpload}>
-      <input
-        type="file"
-        className="form-control mb-2 bg-dark text-white border-secondary"
-        onChange={(e) => setBannerFile(e.target.files[0])}
-      />
-
-      <button
-        className="btn btn-info btn-sm text-dark"
-        disabled={bannerUploading}
-      >
-        {bannerUploading ? "Uploading..." : "Upload / Update Banner"}
-      </button>
-    </form>
-
-  </div>
-</div>
-      
-      <div className="mb-5">
-        <h2 className="fw-bold text-white mb-1">Club Gallery</h2>
-        <p className="text-secondary mb-0">Hover over videos to preview them.</p>
+      {/* HEADER */}
+      <div className="mb-4">
+        <h2 className="text-white fw-bold mb-1">Club Gallery</h2>
+        <p className="text-secondary mb-0">
+          Manage banners, upload media and showcase your club beautifully.
+        </p>
       </div>
-      
+
+      {/* BANNER */}
+      <div className="card premium-card border-0 mb-4 overflow-hidden">
+        <div className="row g-0 align-items-center">
+
+          <div className="col-lg-8">
+            {clubBanner ? (
+              <img
+                src={`${serverUrl}${clubBanner}`}
+                className="w-100"
+                style={{
+                  height: "180px",
+                  width: "100%",
+                  objectFit: "cover",
+                  borderRadius: "20px"
+                }}
+                alt=""
+              />
+            ) : (
+              <div
+                className="d-flex justify-content-center align-items-center text-secondary"
+                style={{ height: "260px" }}
+              >
+                No banner uploaded
+              </div>
+            )}
+          </div>
+
+          <div className="col-lg-4 p-4">
+            <h5 className="text-info fw-bold mb-3">Club Banner</h5>
+
+            <form onSubmit={handleBannerUpload}>
+              <input
+                type="file"
+                className="form-control glass-input mb-3"
+                onChange={(e) => setBannerFile(e.target.files[0])}
+              />
+
+              <button
+                className="btn btn-info w-100 rounded-pill fw-bold text-dark"
+                disabled={bannerUploading}
+              >
+                {bannerUploading ? "Uploading..." : "Upload / Update Banner"}
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
 
       <div className="row g-4">
-        {/* Upload Form */}
+
+        {/* UPLOAD PANEL */}
         <div className="col-lg-4">
-          <form onSubmit={handleUpload} className="card p-4 border-0 shadow-sm" style={{ backgroundColor: '#050a18', border: '1px solid #1a203c' }}>
-            <h6 className="text-info fw-bold mb-3 small">UPLOAD MEDIA</h6>
-            
-            <div className="mb-3">
-              <label className="text-secondary small mb-1">Media Title</label>
-              <input 
-                type="text" className="form-control bg-dark border-secondary text-white shadow-none" 
-                placeholder="Title..." value={mediaTitle} onChange={(e) => setMediaTitle(e.target.value)}
-              />
-            </div>
+          <div className="card premium-card border-0 p-4 h-100">
 
-            <div className="mb-3">
-              <label className="text-secondary small mb-1">Link to Event</label>
-              <select 
-                className="form-select bg-dark border-secondary text-white shadow-none"
-                value={selectedEventId} onChange={(e) => setSelectedEventId(e.target.value)}
+            <h5 className="text-info fw-bold mb-4">Upload Media</h5>
+
+            <form onSubmit={handleUpload}>
+
+              <div className="mb-3">
+                <label className="text-secondary small mb-2">Title</label>
+                <input
+                  type="text"
+                  className="form-control glass-input"
+                  value={mediaTitle}
+                  onChange={(e) => setMediaTitle(e.target.value)}
+                  placeholder="Media title"
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="text-secondary small mb-2">Select Event</label>
+                <select
+                  className="form-select glass-input"
+                  value={selectedEventId}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                >
+                  <option value="">General Gallery</option>
+                  {events.map(ev => (
+                    <option key={ev._id} value={ev._id}>
+                      {ev.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="upload-box text-center mb-4">
+                <input
+                  type="file"
+                  id="uploadMedia"
+                  className="d-none"
+                  accept="image/*,video/*"
+                  onChange={(e) => setSelectedFile(e.target.files[0])}
+                />
+
+                <label htmlFor="uploadMedia" className="btn btn-outline-light rounded-pill px-4">
+                  {selectedFile ? "Change File" : "Select File"}
+                </label>
+
+                {selectedFile && (
+                  <div className="small text-info mt-3 text-truncate">
+                    {selectedFile.name}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-info w-100 rounded-pill fw-bold text-dark"
+                disabled={uploading || !selectedFile}
               >
-                <option value="">General Gallery</option>
-                {events.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
-              </select>
-            </div>
+                {uploading ? "Uploading..." : "Upload Media"}
+              </button>
 
-            <div className="mb-4 text-center p-3 border border-secondary border-dashed rounded-3">
-              <input type="file" className="d-none" id="galleryUpload" accept="image/*,video/*" onChange={(e) => setSelectedFile(e.target.files[0])} />
-              <label htmlFor="galleryUpload" className="btn btn-outline-light btn-sm px-4 rounded-pill">
-                {selectedFile ? 'Change File' : 'Select File'}
-              </label>
-              {selectedFile && <div className="text-info small mt-2 text-truncate">{selectedFile.name}</div>}
-            </div>
-
-            <button type="submit" className="btn btn-info w-100 fw-bold text-dark rounded-pill" disabled={uploading || !selectedFile}>
-              {uploading ? 'Uploading...' : 'Upload'}
-            </button>
-          </form>
+            </form>
+          </div>
         </div>
 
-        {/* Media Grid */}
+        {/* MEDIA GRID */}
         <div className="col-lg-8">
-          {loading ? (
-            <div className="text-center py-5"><div className="spinner-border text-info"></div></div>
-          ) : (
-            <div className="row g-3">
-              {media.map((item) => (
-                <div className="col-md-6 col-xl-4" key={item._id}>
-                  <div 
-                    className="card bg-dark border-0 rounded-4 overflow-hidden shadow-sm h-100 gallery-card"
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    <div style={{ height: '180px', overflow: 'hidden', position: 'relative', background: '#000' }}>
-                      {item.type === 'image' ? (
-                        <img 
-                          src={`${serverUrl}${item.url}`} 
-                          className="w-100 h-100 object-fit-cover transition-all" 
-                          alt={item.title} 
-                          style={{ transition: 'transform 0.5s ease' }}
-                        />
-                      ) : (
-                        <>
-                          <video 
-                            src={`${serverUrl}${item.url}`} 
+          <div className="card premium-card border-0 p-4">
+
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h5 className="text-white fw-bold mb-0">Gallery Assets</h5>
+              <span className="badge bg-info text-dark rounded-pill px-3">
+                {media.length} Items
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-info"></div>
+              </div>
+            ) : (
+              <div className="row g-3">
+                {media.map(item => (
+                  <div className="col-md-6 col-xl-4" key={item._id}>
+                    <div
+                      className="gallery-card premium-media"
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
+                    >
+
+                      <div className="media-box">
+                        {item.type === "image" ? (
+                          <img
+                            src={`${serverUrl}${item.url}`}
                             className="w-100 h-100 object-fit-cover"
-                            loop
-                            muted
-                            playsInline
+                            alt=""
                           />
-                          <div className="position-absolute top-2 end-2 bg-dark bg-opacity-50 text-white rounded-circle p-1" style={{ width: '25px', height: '25px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>
-                            ▶
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="p-3" style={{ background: '#0a1128' }}>
-                      <h6 className="text-white small mb-1 text-truncate">{item.title}</h6>
-                      <div className="d-flex justify-content-between align-items-center mt-2">
-                        {item.eventId ? (
-                          <span className="badge bg-primary bg-opacity-10 text-primary" style={{ fontSize: '10px' }}>Linked</span>
                         ) : (
-                          <span className="text-secondary" style={{ fontSize: '10px' }}>General</span>
+                          <>
+                            <video
+                              src={`${serverUrl}${item.url}`}
+                              className="w-100 h-100 object-fit-cover"
+                              muted
+                              loop
+                              playsInline
+                            />
+                            <div className="play-badge">▶</div>
+                          </>
                         )}
-                        <button onClick={() => handleDelete(item._id)} className="btn btn-sm text-danger p-0" style={{ fontSize: '12px' }}>Delete</button>
                       </div>
+
+                      <div className="p-3">
+                        <h6 className="text-white text-truncate mb-2">
+                          {item.title}
+                        </h6>
+
+                        <div className="d-flex justify-content-between align-items-center">
+                          {item.eventId ? (
+                            <span className="badge bg-primary-subtle text-primary">
+                              Linked
+                            </span>
+                          ) : (
+                            <span className="text-secondary small">
+                              General
+                            </span>
+                          )}
+
+                          <button
+                            onClick={() => handleDelete(item._id)}
+                            className="btn btn-sm btn-outline-danger rounded-pill px-3"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+
+          </div>
         </div>
+
       </div>
 
       <style>{`
-        .gallery-card:hover img {
-          transform: scale(1.1);
+        .premium-card{
+          background: linear-gradient(145deg,#0b1228,#111827);
+          border-radius:22px;
+          box-shadow:0 20px 40px rgba(0,0,0,.25);
         }
-        .gallery-card {
-          transition: transform 0.3s ease;
+
+        .glass-input{
+          background:rgba(255,255,255,.04)!important;
+          border:1px solid rgba(255,255,255,.08)!important;
+          color:#fff!important;
+          border-radius:14px!important;
+          padding:12px 14px;
         }
-        .gallery-card:hover {
-          transform: translateY(-5px);
+
+        .glass-input:focus{
+          box-shadow:none!important;
+          border-color:#0dcaf0!important;
+        }
+
+        .upload-box{
+          border:2px dashed rgba(255,255,255,.12);
+          border-radius:18px;
+          padding:30px 20px;
+          background:rgba(255,255,255,.02);
+        }
+
+        .premium-media{
+          background:#0f172a;
+          border-radius:20px;
+          overflow:hidden;
+          transition:.35s ease;
+          box-shadow:0 10px 25px rgba(0,0,0,.2);
+        }
+
+        .premium-media:hover{
+          transform:translateY(-8px);
+          box-shadow:0 20px 35px rgba(0,0,0,.35);
+        }
+
+        .media-box{
+          height:220px;
+          overflow:hidden;
+          position:relative;
+          background:#000;
+        }
+
+        .premium-media img,
+        .premium-media video{
+          transition:transform .6s ease;
+        }
+
+        .premium-media:hover img,
+        .premium-media:hover video{
+          transform:scale(1.08);
+        }
+
+        .play-badge{
+          position:absolute;
+          top:12px;
+          right:12px;
+          width:34px;
+          height:34px;
+          border-radius:50%;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:rgba(0,0,0,.6);
+          color:#fff;
+          font-size:12px;
         }
       `}</style>
+
     </div>
   );
 };

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import API from "../../api/axios";
-import { toast } from "react-hot-toast";
+// import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const ExploreClubs = () => {
   const [allClubs, setAllClubs] = useState([]);
@@ -57,35 +58,44 @@ const ExploreClubs = () => {
   };
 
   const handleJoin = async (clubId) => {
-    if (!userId) return toast.error("Login required");
+  if (!userId) return toast.error("Login required");
 
-    try {
-      const res = await API.post("/club/students/join-club", {
-        userId,
-        clubId,
-      });
+  try {
+    const res = await API.post("/club/students/join-club", {
+      userId,
+      clubId,
+    });
 
-      toast.success(res.data.message);
+    toast.success(res.data.message);
 
-      const updatedUser = {
-        ...user,
-        joinedClubs: [...(user.joinedClubs || []), clubId],
-      };
+    const updatedUser = {
+      ...user,
+      joinedClubs: [...(user.joinedClubs || []), clubId],
+    };
 
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
 
-      setAllClubs((prev) =>
-        prev.map((c) =>
-          c._id === clubId
-            ? { ...c, membersCount: (c.membersCount || 0) + 1 }
-            : c
-        )
-      );
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Join failed");
+    setAllClubs((prev) =>
+      prev.map((c) =>
+        c._id === clubId
+          ? { ...c, membersCount: (c.membersCount || 0) + 1 }
+          : c
+      )
+    );
+
+  } catch (err) {
+    const message = err.response?.data?.message;
+
+    if (message === "Already joined this club") {
+      toast.warning("You are already registered in this club ⚠️");
+    } else if (message === "You can only join maximum 2 clubs") {
+      toast.error("You can join only 2 clubs ❌");
+    } else {
+      toast.error(message || "Join failed");
     }
-  };
+  }
+};
 
   const filteredClubs = useMemo(() => {
     return allClubs.filter(

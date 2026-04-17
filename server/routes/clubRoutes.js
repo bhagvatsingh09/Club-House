@@ -13,7 +13,7 @@ const path = require("path");
 router.get("/", async (req, res) => {
   try {
     const clubs = await Club.find({ status: "Active" });
-    
+
     res.json(clubs);
   } catch {
     res.status(500).json({ message: "Error fetching clubs" });
@@ -69,22 +69,41 @@ router.post("/students/join-club", async (req, res) => {
 
     const user = await User.findById(userId);
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.joinedClubs.includes(clubId)) {
-      return res.status(400).json({ message: "Already joined" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
+    // ✅ LIMIT: max 2 clubs
+    if (user.joinedClubs.length >= 2) {
+      return res.status(400).json({
+        message: "You can only join maximum 2 clubs"
+      });
+    }
+
+    // ✅ SAFE duplicate check
+    const alreadyJoined = user.joinedClubs.some(
+      c => c.toString() === clubId
+    );
+
+    if (alreadyJoined) {
+      return res.status(400).json({
+        message: "Already joined this club"
+      });
+    }
+
+    // ✅ ADD CLUB
     user.joinedClubs.push(clubId);
     await user.save();
 
+    // ✅ UPDATE CLUB COUNT
     await Club.findByIdAndUpdate(clubId, {
       $inc: { membersCount: 1 }
     });
 
     res.json({ message: "Joined successfully" });
 
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Join failed" });
   }
 });
@@ -93,11 +112,21 @@ router.post("/students/join-club", async (req, res) => {
 // GET MEMBERS
 // ============================
 router.get("/:clubId/members", async (req, res) => {
-  try { 
+  try {
     const members = await User.find({
-      joinedClubs : req.params.clubId,
+      joinedClubs: req.params.clubId,
       role: "Student"
-    }).select("name email roll clubRole");
+    }).select(`
+      name
+      email
+      roll
+      clubRole
+      volunteerClub
+      volunteerRole
+      assignedTask
+      taskDeadline
+      taskStatus
+    `);
 
     res.json(members);
   } catch {
@@ -129,41 +158,32 @@ router.get('/notifications/:clubId', async (req, res) => {
 // ============================
 router.put("/update-role/:userId", async (req, res) => {
   try {
-    const { role } = req.body;
+    const { role, clubId } = req.body;
     const { userId } = req.params;
-    const clubId = req.user?.clubId;
-
-    console.log("Updating role:", { userId, role, clubId });
-
-    if (!role) {
-      return res.status(400).json({ message: "Role is required" });
-    }
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     if (role === "Volunteer") {
-      if (user.volunteerClub && user.volunteerClub.toString() !== clubId) {
-        return res.status(400).json({
-          message: `User is already a volunteer in another club`
-        });
-      }
       user.clubRole = "Volunteer";
-      user.volunteerClub = clubId;
-    }
-    else if (role === "Member") {
+      user.clubId = clubId;          // ✅ important
+      user.volunteerClub = clubId;  // optional
+    } else if (role === "Member") {
       user.clubRole = "Member";
-      if (user.volunteerClub?.toString() === clubId) user.volunteerClub = null;
-    }
-    else {
-      return res.status(400).json({ message: "Invalid role value" });
+      user.clubId = clubId;
+      user.volunteerClub = null;
     }
 
     await user.save();
-    return res.json({ message: "Role updated", user });
+
+    res.json({ message: "Updated", user });
+
   } catch (err) {
-    console.error("Error updating role:", err);
-    return res.status(500).json({ message: "Server error", error: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -242,6 +262,34 @@ router.post('/create-club', async (req, res) => {
   }
 });
 
+// assign task to volunteer 
+router.put('/assign-task/:id', async (req, res) => {
+  const members = await User.find({
+    joinedClubs: req.params.clubId
+  }).select(
+    'name email clubRole volunteerClub volunteerRole assignedTask taskDeadline taskStatus'
+  );
+
+  res.json(members);
+});
+
+
+// router.get("/club-volunteers/:clubId", async (req, res) => {
+//   try {
+//     const clubId = new mongoose.Types.ObjectId(req.params.clubId);
+
+//     const volunteers = await User.find({
+//       volunteerClub: clubId,
+//       clubRole: "Volunteer"
+//     }).select("name email clubRole volunteerRole");
+
+//     res.json(volunteers);
+
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Failed to fetch volunteers" });
+//   }
+// });
 
 
 module.exports = router;

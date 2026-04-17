@@ -6,8 +6,6 @@ const EventSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   time: { type: String },
   location: { type: String, required: true },
-  
-  
 
   participationType: {
     type: String,
@@ -23,20 +21,34 @@ const EventSchema = new mongoose.Schema({
     required: true
   },
 
-  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  pendingParticipants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  participants: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  ],
+
+  pendingParticipants: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  ],
+
   extraParticipants: [
+    {
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      name: String,
+      roll: String,
+      department: String
+    }
+  ],
+
+  // ✅ FINAL CORRECT VOLUNTEER STRUCTURE
+  volunteers: [
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    name: String,
-    roll: String,
-    department: String
-  }
-],
-volunteers: [
-  {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+    role: String,
+    task: String,
+    deadline: Date
   }
 ],
 
@@ -47,24 +59,11 @@ volunteers: [
     }
   ],
 
-  capacity: { type: Number, default: 100 },
-  volunteers: [
-  {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }
-],
-participants: [
-  {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }
-]
+  capacity: { type: Number, default: 100 }
 
-  
+},
 
-}, { timestamps: true });
 
-  
+{ timestamps: true });
 
 module.exports = mongoose.model("Event", EventSchema);
