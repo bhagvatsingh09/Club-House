@@ -33,8 +33,7 @@ router.get("/:clubId/stats", async (req, res) => {
     });
 
     const events = await Event.countDocuments({ club: clubId });
-    const gallery = await Gallery.countDocuments({ club: clubId });
-
+    const gallery = await Gallery.countDocuments({ clubId: clubId });
     const pendingEvents = await Event.find({
       club: clubId,
       pendingParticipants: { $exists: true, $not: { $size: 0 } }

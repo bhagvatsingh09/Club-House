@@ -139,23 +139,57 @@ const Landingpage = () => {
       </div>
 
       {/* Contact Us */}
-      <div id="contact" className="container my-5 pb-5">
-        <h2 className="text-center fw-bold mb-4 text-info">Contact Us</h2>
-        <div className="mx-auto" style={{ maxWidth: '600px' }}>
-          <form>
-            <input type="text" className="form-control glass-input mb-3" placeholder="Full Name" />
-            <input type="email" className="form-control glass-input mb-3" placeholder="Email Address" />
-            <textarea className="form-control glass-input mb-4" rows="5" placeholder="Your Message..."></textarea>
-            <button className="btn btn-primary-custom w-100 py-3 shadow">Submit</button>
-          </form>
-        </div>
-      </div>
+<div id="contact" className="container my-5 pb-5">
+  <h2 className="text-center fw-bold mb-4 text-info">Contact Us</h2>
+
+  <div className="mx-auto" style={{ maxWidth: "600px" }}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        alert("Thank you! Your message has been received.");
+      }}
+    >
+      <input
+        type="text"
+        className="form-control glass-input mb-3"
+        placeholder="Full Name"
+        required
+      />
+
+      <input
+        type="email"
+        className="form-control glass-input mb-3"
+        placeholder="Email Address"
+        required
+      />
+
+      <textarea
+        className="form-control glass-input mb-4"
+        rows="5"
+        placeholder="Your Message..."
+        required
+      ></textarea>
+
+      <button
+        type="submit"
+        className="btn btn-primary-custom w-100 py-3 shadow fw-bold"
+      >
+        Submit Message
+      </button>
+    </form>
+
+    {/* Extra Contact Info */}
+    
+  </div>
+</div>
 
       {/* Footer */}
       <footer className="text-center py-5 border-top border-secondary">
-        <p className="small text-secondary mb-1">(c)2026 College Club</p>
-        <p className="small text-secondary mb-1">Email: support@collegeclub.com</p>
-        <p className="small text-secondary">Phone: +91 1232366696</p>
+        <div className="text-center mt-4 text-light">
+      <p className="mb-1">📧 support@clubportal.com</p>
+      <p className="mb-1">📞 +91 6355643264</p>
+      <p className="mb-0">📍 Your College Campus</p>
+    </div>
         <li className="nav-item"><Link className="nav-link" to="/admin/login">Admin</Link></li>
 
       </footer>

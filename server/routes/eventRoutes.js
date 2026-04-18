@@ -67,16 +67,15 @@ router.post('/:eventId/register', async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // 🔥 PREVENT VOLUNTEER REGISTRATION
-    // const isVolunteer = event.volunteers?.some(
-    //   v => v.toString() === userId
-    // );
+    const isVolunteer = event.volunteers?.some(
+  (v) => (v.user?._id || v.user || v).toString() === userId.toString()
+);
 
-    if (isVolunteer) {
-      return res.status(400).json({
-        message: "You are a volunteer for this event and cannot register"
-      });
-    }
+if (isVolunteer) {
+  return res.status(400).json({
+    message: "You are a volunteer for this event and cannot register"
+  });
+}
 
     // 🚨 Capacity check
     if (event.participants.length >= event.capacity) {
@@ -582,6 +581,35 @@ router.put("/:eventId/assign-volunteer", async (req, res) => {
   }
 });
 
+router.put("/:id/update-task", async (req, res) => {
+  try {
+    const { userId, task } = req.body;
+
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const volunteer = event.volunteers.find(
+      (v) => String(v.user) === String(userId)
+    );
+
+    if (!volunteer) {
+      return res.status(404).json({ message: "Volunteer not assigned" });
+    }
+
+    volunteer.task = task;
+
+    await event.save();
+
+    res.json({ message: "Task updated successfully", event });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Update failed" });
+  }
+});
 
 
 

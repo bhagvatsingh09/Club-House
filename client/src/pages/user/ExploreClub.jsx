@@ -113,14 +113,26 @@ const ExploreClubs = () => {
       {!selectedClub ? (
         <>
           <h2 className="text-white mb-4">Explore Clubs</h2>
+          <style>
+    {`
+      .search-input::placeholder {
+        color: rgba(255,255,255,0.65);
+      }
+    `}
+  </style>
 
           <input
-            type="text"
-            className="form-control mb-4 bg-dark text-white"
-            placeholder="Search club..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    type="text"
+    className="form-control mb-4 bg-dark text-white search-input"
+    placeholder="Search club..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    style={{
+      backgroundColor: "#1e1e1e",
+      color: "white"
+    }}
+  />
+
 
           <div className="row">
   {filteredClubs.map((club) => {

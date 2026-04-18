@@ -7,36 +7,47 @@ const Event = require('../models/Event');
 
 // GET STUDENT DASHBOARD
 router.get('/dashboard/:studentId', async (req, res) => {
-    try {
-        const { studentId } = req.params;
-        if (!studentId || studentId === 'undefined') {
-            return res.status(400).json({ message: "Invalid Student ID" });
-        }
+  try {
+    const { studentId } = req.params;
 
-        const student = await User.findById(studentId).populate('joinedClubs', 'name');
-        if (!student) return res.status(404).json({ message: "Student not found" });
+    const student = await User.findById(studentId)
+      .populate('joinedClubs', 'name');
 
-        const registrations = await Registration.find({ userId: studentId })
-            .populate('eventId', 'title')
-            .populate('clubId', 'name')
-            .sort({ registeredAt: -1 });
+    const events = await Event.find({
+      $or: [
+        { participants: studentId },
+        { pendingParticipants: studentId }
+      ]
+    })
+    .populate('club', 'name')
+    .sort({ createdAt: -1 });
 
-        const announcements = await Event.find({
-            club: { $in: student.joinedClubs || [] }
-        })
-        .populate('club', 'name')
-        .sort({ createdAt: -1 })
-        .limit(5);
+    const registrations = events.map(event => ({
+      _id: event._id,
+      eventId: { title: event.title },
+      clubId: { name: event.club?.name || "Club" },
+      status: event.participants.some(
+        id => id.toString() === studentId.toString()
+      ) ? "approved" : "pending"
+    }));
 
-        res.json({
-            joinedClubs: student.joinedClubs || [],
-            registrations: registrations || [],
-            announcements: announcements || []
-        });
-    } catch (err) {
-        console.error("Dashboard Error:", err);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
+    const announcements = await Event.find({
+      club: { $in: student.joinedClubs || [] }
+    })
+    .populate('club', 'name')
+    .sort({ createdAt: -1 })
+    .limit(5);
+
+    res.json({
+      joinedClubs: student.joinedClubs || [],
+      registrations,
+      announcements
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 
 // JOIN CLUB - FIXED BAD REQUEST LOGIC

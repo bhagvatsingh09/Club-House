@@ -83,9 +83,9 @@ const StudentDashboard = () => {
                       </div>
 
                       {/* RIGHT SIDE */}
-                      <button className="btn btn-outline-info btn-sm">
+                      {/* <button className="btn btn-outline-info btn-sm">
                         View
-                      </button>
+                      </button> */}
 
                     </div>
                   </div>
@@ -119,8 +119,8 @@ const StudentDashboard = () => {
                         <td>{reg.clubId?.name}</td>
                         <td>
                           <span className={`badge ${reg.status === "approved"
-                              ? "bg-success"
-                              : "bg-warning text-dark"
+                            ? "bg-success"
+                            : "bg-warning text-dark"
                             }`}>
                             {reg.status}
                           </span>

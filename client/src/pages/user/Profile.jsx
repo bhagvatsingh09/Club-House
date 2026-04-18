@@ -158,14 +158,14 @@ const Profile = () => {
                   placeholder="Student ID"
                 />
 
-                <select
+                {/* <select
                   className="form-select bg-dark text-white border-secondary mb-2"
                   value={formData.department}
                   onChange={(e) => setFormData({...formData, department: e.target.value})}
                 >
                   <option value="">Select Department</option>
                   {departments.map(d => <option key={d}>{d}</option>)}
-                </select>
+                </select> */}
 
                 <input
                   className="form-control mb-2 bg-dark text-white border-secondary"

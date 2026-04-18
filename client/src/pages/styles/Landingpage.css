@@ -165,3 +165,21 @@
 .gallery-card:hover video {
   transform: scale(1.08);
 }
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+.glass-input::placeholder {
+  color: rgba(255,255,255,0.75);
+  opacity: 1;
+}
+
+.glass-input:focus {
+  background: rgba(255,255,255,0.12);
+  color: #ffffff !important;
+  border-color: #0dcaf0;
+  box-shadow: 0 0 0 0.2rem rgba(13,202,240,0.25);
+}
